@@ -20,8 +20,8 @@ package org.apache.giraph.examples.jabeja;
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 
 import java.io.IOException;
 import java.util.Random;
@@ -32,7 +32,7 @@ import java.util.Random;
  */
 public class NodePartitioningComputation extends
         BasicComputation<LongWritable, NodePartitioningVertexData,
-                NullWritable, LongWritable> {
+                IntWritable, Message> {
   /**
    * The default number of different colors, if no
    * JaBeJa.NumberOfColors is provided.
@@ -46,47 +46,84 @@ public class NodePartitioningComputation extends
   /**
    * The currently processed vertex
    */
-  private Vertex<LongWritable, NodePartitioningVertexData, NullWritable> vertex;
+  private Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex;
 
   @Override
   public void compute(
           Vertex<LongWritable, NodePartitioningVertexData,
-                  NullWritable> vertex,
-          Iterable<LongWritable> messages) throws IOException {
+                  IntWritable> vertex,
+          Iterable<Message> messages) throws IOException {
     this.vertex = vertex;
 
     if (super.getSuperstep() == 0) {
+      if (vertex.getValue() == null) {
+        vertex.setValue(new NodePartitioningVertexData());
+      }
       initializeColor();
     }
 
-    int mode = (int) (super.getSuperstep() % 4);
+    int mode = (int) (super.getSuperstep());
 
     switch (mode) {
     case 0:
-      askForAColor(vertex);
+      announceColor();
+      break;
+    case 1:
+      storeColorsOfNodes(messages);
+      replyWithColor(messages);
+      break;
+    case 2:
+      storeColorsOfNodes(messages);
+      this.vertex.voteToHalt();
       break;
     default:
+      this.vertex.voteToHalt();
     }
   }
 
   /**
-   * send a message to a random node to ask for its color
+   * Store the color of all neighboring nodes. Neighboring through outgoing
+   * as well as incoming edges.
    *
-   * @param vertex - the current vertex
+   * @param messages received messages from nodes with their colors.
    */
-  private void askForAColor(
-          Vertex<LongWritable, NodePartitioningVertexData, NullWritable>
-                  vertex) {
-    int randomEdgeIndex = randomGenerator.nextInt(vertex.getNumEdges());
-
-    for (Edge<LongWritable, NullWritable> edge : vertex.getEdges()) {
-      if (randomEdgeIndex == 0) {
-        sendMessage(edge.getTargetVertexId(), new LongWritable(1));
-        break;
-      } else {
-        randomEdgeIndex--;
-      }
+  private void storeColorsOfNodes(Iterable<Message> messages) {
+    for (Message msg : messages) {
+      this.vertex.getValue().setNeighborWithColor(msg.getVertexId(),
+                                                  msg.getColor());
     }
+  }
+
+  /**
+   * Reply to all received messages with the current color.
+   *
+   * @param messages all received messages.
+   */
+  private void replyWithColor(Iterable<Message> messages) {
+    for (Message msg : messages) {
+      sendCurrentVertexColor(new LongWritable(msg.getVertexId()));
+    }
+  }
+
+  /**
+   * Announce the current color to all connected vertices.
+   */
+  private void announceColor() {
+    for (Edge<LongWritable, IntWritable> edge : vertex.getEdges()) {
+      sendCurrentVertexColor(edge.getTargetVertexId());
+    }
+  }
+
+  /**
+   * Send a message to a vertex with the current color and id,
+   * so that this vertex would be able to reply.
+   *
+   * @param targetId id of the vertex to which the message should be sent
+   */
+  private void sendCurrentVertexColor(LongWritable targetId) {
+    super.sendMessage(targetId, new Message(this.vertex.getId().get(),
+                                            this.vertex.getValue()
+                                                       .getNodeColor()));
   }
 
   /**
@@ -94,7 +131,7 @@ public class NodePartitioningComputation extends
    */
   private void initializeColor() {
     int numberOfColors = getNumberOfColors();
-    int myColor = randomGenerator.nextInt(numberOfColors);
+    int myColor = (int) getRandomNumber(numberOfColors);
 
     this.vertex.getValue().setNodeColor(myColor);
   }

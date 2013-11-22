@@ -31,15 +31,15 @@ import java.util.Map;
  */
 public class VertexData implements Writable {
   /**
-   * The key is the id of the neighbor, the value is the color. this property
-   * is stored
+   * The key is the id of the neighbor, the value is the color.
+   * this property is stored
    */
   private final Map<Long, Integer> neighboringColors =
           new HashMap<Long, Integer>();
 
   /**
-   * The key is the color, the value is how often the color exists. this
-   * property is calculated
+   * The key is the color, the value is how often the color exists.
+   * this property is calculated
    */
   private Map<Integer, Integer> neighboringColorRatio;
 
@@ -57,6 +57,17 @@ public class VertexData implements Writable {
   }
 
   /**
+   * Update the neighboringColors map with a new or updated entry of a
+   * neighbor and its color
+   *
+   * @param neighborId    the id of the neighbor (could be node or edge)
+   * @param neighborColor the color of the neighbor
+   */
+  public void setNeighborWithColor(long neighborId, int neighborColor) {
+    this.neighboringColors.put(neighborId, neighborColor);
+  }
+
+  /**
    * Initializes the histogram for colors of all neighbors.
    * How often each of the colors is represented between the neighbors.
    * If a color isn't represented, it's not in the final Map.
@@ -65,18 +76,26 @@ public class VertexData implements Writable {
     this.neighboringColorRatio = new HashMap<Integer, Integer>();
 
     for (Map.Entry<Long, Integer> item : this.neighboringColors.entrySet()) {
-      int color = item.getValue();
-      Integer numberOfColorAppearances = this.neighboringColorRatio
-              .get(color);
-
-      if (numberOfColorAppearances == null) {
-        numberOfColorAppearances = 1;
-      } else {
-        numberOfColorAppearances++;
-      }
-
-      this.neighboringColorRatio.put(color, numberOfColorAppearances);
+      addColorToNeighboringColoRatio(item.getValue());
     }
+  }
+
+  /**
+   * Check if the color already exists in the neighboringColorRatio-map. If
+   * not, create a new entry with the count 1, if yes than update the count +1
+   *
+   * @param color the color of one neighboring item
+   */
+  private void addColorToNeighboringColoRatio(int color) {
+    Integer numberOfColorAppearances = this.neighboringColorRatio.get(color);
+
+    if (numberOfColorAppearances == null) {
+      numberOfColorAppearances = 1;
+    } else {
+      numberOfColorAppearances++;
+    }
+
+    this.neighboringColorRatio.put(color, numberOfColorAppearances);
   }
 
   @Override
