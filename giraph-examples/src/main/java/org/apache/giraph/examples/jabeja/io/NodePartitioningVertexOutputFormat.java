@@ -36,9 +36,7 @@ public class NodePartitioningVertexOutputFormat extends
   @Override
   public TextVertexWriter createVertexWriter(
           TaskAttemptContext context) throws IOException, InterruptedException {
-    NodePartitioningVertexWriter writer = new NodePartitioningVertexWriter();
-    writer.initialize(context);
-    return writer;
+    return new NodePartitioningVertexWriter();
   }
 
   /**

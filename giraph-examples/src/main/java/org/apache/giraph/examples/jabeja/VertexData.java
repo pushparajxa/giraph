@@ -44,6 +44,12 @@ public class VertexData implements Writable {
   private Map<Integer, Integer> neighboringColorRatio;
 
   /**
+   * Default constructor for reflection
+   */
+  public VertexData() {
+  }
+
+  /**
    * @return data for a histogram for the colors of all neighbors.
    *         How often each of the colors is represented between the neighbors.
    *         If a color isn't represented, it's not in the final Map.
