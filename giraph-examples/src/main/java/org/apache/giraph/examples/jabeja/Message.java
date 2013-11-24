@@ -38,6 +38,12 @@ public class Message implements Writable {
   private int color;
 
   /**
+   * Default constructor for reflection
+   */
+  public Message() {
+  }
+
+  /**
    * Initializes the message
    *
    * @param vertexId the id of the vertex sending the message
@@ -52,8 +58,16 @@ public class Message implements Writable {
     return vertexId;
   }
 
+  public void setVertexId(long vertexId) {
+    this.vertexId = vertexId;
+  }
+
   public int getColor() {
     return color;
+  }
+
+  public void setColor(int color) {
+    this.color = color;
   }
 
   @Override
