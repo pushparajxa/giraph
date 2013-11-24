@@ -225,6 +225,8 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
       Vertex<LongWritable, V, E>
               vertex = getConf().createVertex();
       long vertexId = startingVertexId + verticesRead;
+      LongWritable writableVertexId = new LongWritable(vertexId);
+
       // Seed on the vertex id to keep the vertex data the same when
       // on different number of workers, but other parameters are the
       // same.
@@ -235,6 +237,10 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
       OutEdges<LongWritable, E> edges =
               getConf().createAndInitializeOutEdges(edgesPerVertex);
       Set<LongWritable> destVertices = Sets.newHashSet();
+
+      // to prevent heaving loop edges.
+      destVertices.add(writableVertexId);
+
       for (long i = 0; i < edgesPerVertex; ++i) {
         LongWritable destVertexId = new LongWritable();
         do {
@@ -244,7 +250,7 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
                 this.inputFormat.getEdgeValue(vertexId, destVertexId.get())));
         destVertices.add(destVertexId);
       }
-      vertex.initialize(new LongWritable(vertexId), vertexValue, edges);
+      vertex.initialize(writableVertexId, vertexValue, edges);
       ++verticesRead;
       if (log.isTraceEnabled()) {
         log.trace("next: Return vertexId=" +
