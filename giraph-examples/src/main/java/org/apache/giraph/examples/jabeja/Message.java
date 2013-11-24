@@ -58,16 +58,8 @@ public class Message implements Writable {
     return vertexId;
   }
 
-  public void setVertexId(long vertexId) {
-    this.vertexId = vertexId;
-  }
-
   public int getColor() {
     return color;
-  }
-
-  public void setColor(int color) {
-    this.color = color;
   }
 
   @Override
