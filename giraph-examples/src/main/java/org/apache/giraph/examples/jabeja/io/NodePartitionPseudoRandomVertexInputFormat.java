@@ -15,45 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.giraph.examples.jabeja;
+package org.apache.giraph.examples.jabeja.io;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import org.apache.giraph.examples.jabeja.NodePartitioningVertexData;
+import org.apache.hadoop.io.IntWritable;
 
 /**
- * Vertex data for the NodePartitioning solution.
+ * Random graph generator for the NodePartitioning problem.
  */
-public class NodePartitioningVertexData extends VertexData {
-  /**
-   * The color of the current node
-   */
-  private int nodeColor;
-
-  public int getNodeColor() {
-    return nodeColor;
-  }
-
-  public void setNodeColor(int nodeColor) {
-    this.nodeColor = nodeColor;
+public class NodePartitionPseudoRandomVertexInputFormat extends
+        PseudoRandomVertexInputFormat<NodePartitioningVertexData, IntWritable> {
+  @Override
+  protected NodePartitioningVertexData getVertexValue(long vertexId) {
+    return new NodePartitioningVertexData();
   }
 
   @Override
-  public void readFields(DataInput input) throws IOException {
-    super.readFields(input);
-
-    this.nodeColor = input.readInt();
-  }
-
-  @Override
-  public void write(DataOutput output) throws IOException {
-    super.write(output);
-
-    output.writeInt(this.nodeColor);
-  }
-
-  @Override
-  public String toString() {
-    return Integer.toString(this.nodeColor);
+  protected IntWritable getEdgeValue(
+          long vertexSourceId, long vertexDestinationId) {
+    return new IntWritable(0);
   }
 }

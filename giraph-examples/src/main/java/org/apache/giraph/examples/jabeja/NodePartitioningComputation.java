@@ -56,9 +56,6 @@ public class NodePartitioningComputation extends
     this.vertex = vertex;
 
     if (super.getSuperstep() == 0) {
-      if (vertex.getValue() == null) {
-        vertex.setValue(new NodePartitioningVertexData());
-      }
       initializeColor();
     }
 
@@ -90,7 +87,7 @@ public class NodePartitioningComputation extends
   private void storeColorsOfNodes(Iterable<Message> messages) {
     for (Message msg : messages) {
       this.vertex.getValue().setNeighborWithColor(msg.getVertexId(),
-                                                  msg.getColor());
+              msg.getColor());
     }
   }
 
@@ -122,8 +119,8 @@ public class NodePartitioningComputation extends
    */
   private void sendCurrentVertexColor(LongWritable targetId) {
     super.sendMessage(targetId, new Message(this.vertex.getId().get(),
-                                            this.vertex.getValue()
-                                                       .getNodeColor()));
+            this.vertex.getValue()
+                    .getNodeColor()));
   }
 
   /**
@@ -142,7 +139,7 @@ public class NodePartitioningComputation extends
    */
   private int getNumberOfColors() {
     return super.getConf().getInt("JaBeJa.NumberOfColors",
-                                  DEFAULT_NUMBER_OF_COLORS);
+            DEFAULT_NUMBER_OF_COLORS);
   }
 
   /**
@@ -172,8 +169,8 @@ public class NodePartitioningComputation extends
       this.randomGenerator = new Random();
     } else {
       long seed = calculateHashCode(String.format("%d#%d#%d", configuredSeed,
-                                                  super.getSuperstep(),
-                                                  this.vertex.getId().get()));
+              super.getSuperstep(),
+              this.vertex.getId().get()));
       this.randomGenerator = new Random(seed);
     }
   }
