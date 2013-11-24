@@ -64,7 +64,9 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
   @Override
   public VertexReader<LongWritable, V, E> createVertexReader(
           InputSplit split, TaskAttemptContext context) throws IOException {
-    return new PseudoRandomVertexReader(this);
+    PseudoRandomVertexReader reader = new PseudoRandomVertexReader();
+    reader.initialize(this);
+    return reader;
   }
 
   /**
@@ -120,7 +122,7 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
      * .io.PseudoRandomVertexInputFormat} class to get data for random
      * vertices and edges.
      */
-    private final PseudoRandomVertexInputFormat<V, E> inputFormat;
+    private PseudoRandomVertexInputFormat<V, E> inputFormat;
     /**
      * Starting vertex id.
      */
@@ -151,13 +153,19 @@ public abstract class PseudoRandomVertexInputFormat<V extends Writable,
     private PseudoRandomLocalEdgesHelper localEdgesHelper;
 
     /**
-     * Constructor
+     * Default constructor for reflection
+     */
+    public PseudoRandomVertexReader() {
+    }
+
+    /**
+     * Initialize the inputFormat to be able to retrieve values for vertices
+     * and edges.
      *
      * @param inputFormat link to the parent class to get data for vertices
      *                    and edges
      */
-    public PseudoRandomVertexReader(
-            PseudoRandomVertexInputFormat<V, E> inputFormat) {
+    public void initialize(PseudoRandomVertexInputFormat<V, E> inputFormat) {
       this.inputFormat = inputFormat;
     }
 

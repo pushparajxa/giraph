@@ -30,6 +30,13 @@ public class NodePartitioningVertexData extends VertexData {
    */
   private int nodeColor;
 
+  /**
+   * Default constructor for reflection
+   */
+  public NodePartitioningVertexData() {
+    super();
+  }
+
   public int getNodeColor() {
     return nodeColor;
   }
