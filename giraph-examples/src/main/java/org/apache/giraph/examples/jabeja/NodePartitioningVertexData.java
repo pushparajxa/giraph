@@ -38,6 +38,29 @@ public class NodePartitioningVertexData extends VertexData {
     this.nodeColor = nodeColor;
   }
 
+  /**
+   * Calculates the energy of the node according to <code>the number of
+   * neighbors - the number of neighbors in the same color</code>
+   *
+   * @return the energy of the current node (how many neighbors are of a
+   *         different color)
+   */
+  public int getNodeEnergy() {
+    return super.getNumberOfNeighbors() -
+           getNumberOfNeighborsWithCurrentColor();
+  }
+
+  /**
+   * Simply calls <code>getNumberOfNeighbors</code> with the parameter of the
+   * current color.
+   *
+   * @return the number of neighbors which have the same color as the current
+   *         node.
+   */
+  public int getNumberOfNeighborsWithCurrentColor() {
+    return super.getNumberOfNeighbors(getNodeColor());
+  }
+
   @Override
   public void readFields(DataInput input) throws IOException {
     super.readFields(input);

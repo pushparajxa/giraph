@@ -23,7 +23,7 @@ import org.apache.hadoop.io.IntWritable;
 /**
  * Random graph generator for the NodePartitioning problem.
  */
-public class NodePartitionPseudoRandomVertexInputFormat extends
+public class NodePartitioningPseudoRandomVertexInputFormat extends
         PseudoRandomVertexInputFormat<NodePartitioningVertexData, IntWritable> {
   @Override
   protected NodePartitioningVertexData getVertexValue(long vertexId) {

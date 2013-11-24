@@ -57,6 +57,15 @@ public class VertexData implements Writable {
   }
 
   /**
+   * Returns a list of IDs of all the neighbors.
+   *
+   * @return a list of IDs of all the neighbors.
+   */
+  public Iterable<Long> getNeighbors() {
+    return this.neighboringColors.keySet();
+  }
+
+  /**
    * Update the neighboringColors map with a new or updated entry of a
    * neighbor and its color
    *
@@ -65,19 +74,6 @@ public class VertexData implements Writable {
    */
   public void setNeighborWithColor(long neighborId, int neighborColor) {
     this.neighboringColors.put(neighborId, neighborColor);
-  }
-
-  /**
-   * Initializes the histogram for colors of all neighbors.
-   * How often each of the colors is represented between the neighbors.
-   * If a color isn't represented, it's not in the final Map.
-   */
-  public void initializeNeighboringColorRatio() {
-    this.neighboringColorRatio = new HashMap<Integer, Integer>();
-
-    for (Map.Entry<Long, Integer> item : this.neighboringColors.entrySet()) {
-      addColorToNeighboringColoRatio(item.getValue());
-    }
   }
 
   /**
@@ -98,6 +94,32 @@ public class VertexData implements Writable {
     this.neighboringColorRatio.put(color, numberOfColorAppearances);
   }
 
+  /**
+   * Returns the number of neighbors
+   *
+   * @return the number of neighbors
+   */
+  public int getNumberOfNeighbors() {
+    return this.neighboringColors.size();
+  }
+
+  /**
+   * Gets the number of neighbors in a specific color
+   *
+   * @param color color of the neighbors
+   * @return the number of neighbors in the color <code>color</code>
+   */
+  public int getNumberOfNeighbors(int color) {
+    Integer numberOfNeighborsInColor =
+            getNeighboringColorRatio().get(color);
+
+    if (numberOfNeighborsInColor == null) {
+      return 0;
+    } else {
+      return numberOfNeighborsInColor.intValue();
+    }
+  }
+
   @Override
   public void readFields(DataInput input) throws IOException {
     readNeighboringColors(input);
@@ -106,6 +128,19 @@ public class VertexData implements Writable {
   @Override
   public void write(DataOutput output) throws IOException {
     writeNeighboringColors(output);
+  }
+
+  /**
+   * Initializes the histogram for colors of all neighbors.
+   * How often each of the colors is represented between the neighbors.
+   * If a color isn't represented, it's not in the final Map.
+   */
+  private void initializeNeighboringColorRatio() {
+    this.neighboringColorRatio = new HashMap<Integer, Integer>();
+
+    for (Map.Entry<Long, Integer> item : this.neighboringColors.entrySet()) {
+      addColorToNeighboringColoRatio(item.getValue());
+    }
   }
 
   /**
