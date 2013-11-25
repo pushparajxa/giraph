@@ -163,8 +163,9 @@ public class NodePartitioningComputation extends
    * will always generate the same random values.
    */
   private void initializeRandomGenerator() {
-    int configuredSeed = super.getConf().getInt("JaBeJa.RandomSeed", -1);
+    int configuredSeed = super.getConf().getInt("JaBeJa.RandomSeed", 0);
 
+    // if you want to have a totally random number just set the config to -1
     if (configuredSeed == -1) {
       this.randomGenerator = new Random();
     } else {
