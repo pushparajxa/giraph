@@ -54,7 +54,7 @@ public class SimpleHopsTextVertexOutputFormat extends
                     NullWritable> vertex) throws IOException {
       StringBuilder sb = new StringBuilder();
 
-      sb.append(vertex.getValue());
+      sb.append(vertex.getId());
       sb.append(" \t");
 
       for (Map.Entry<Long, Integer> entry : vertex.getValue()
