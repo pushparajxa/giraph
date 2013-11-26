@@ -37,8 +37,8 @@ import java.util.Set;
 public class SimpleHopsVertexValue implements Writable {
   /**
    * The vertices for which the current vertex wants to find out the hop
-   * count, together with the number of hops or -1 if the number of hops
-   * isn't known yet.
+   * count, together with the number of hops or Integer.MAX_VALUE if the
+   * number of hops isn't known yet.
    */
   private Map<Long, Integer> verticesWithHopsCount =
           new HashMap<Long, Integer>();
@@ -81,25 +81,28 @@ public class SimpleHopsVertexValue implements Writable {
 
   /**
    * Sets the vertex IDs of vertices for which the hops count should be
-   * calculated together with the invalid hops count of -1.
+   * calculated together with the invalid hops count of Integer.MAX_VALUE.
    *
    * @param vertices list of vertex IDs
    */
   public void initializeVerticesWithHopsCount(Iterable<Long> vertices) {
     for (Long vertex : vertices) {
-      this.verticesWithHopsCount.put(vertex, -1);
+      this.verticesWithHopsCount.put(vertex, Integer.MAX_VALUE);
     }
   }
 
   /**
    * When the vertex receives an answer it will be stored. There shouldn't be
-   * multiple answers arriving, However anyway the first one will be always
-   * the shortest.
+   * multiple answers arriving and the first one should be always the
+   * shortest one. But since the initial value is Integer.MAX_VALUE this
+   * logic will always work.
    *
    * @param message the answered message with the correct hops count
    */
   public void updateHopsCounts(SimpleHopsMessage message) {
-    if (!this.verticesWithHopsCount.containsKey(message.getDestinationId())) {
+    int currentHopsCount = this.verticesWithHopsCount.get(message
+            .getDestinationId());
+    if (message.getHopsCount() < currentHopsCount) {
       this.verticesWithHopsCount.put(
               message.getDestinationId(), message.getHopsCount());
     }
@@ -109,11 +112,11 @@ public class SimpleHopsVertexValue implements Writable {
    * Check if all answers have been received.
    *
    * @return true if there are no more entries in verticesWithHopsCounts with
-   *         invalid values (-1)
+   *         invalid values (Integer.MAX_VALUE)
    */
   public boolean hasAllHopsCounts() {
     for (Entry<Long, Integer> entry : this.verticesWithHopsCount.entrySet()) {
-      if (entry.getValue() == -1) {
+      if (entry.getValue() == Integer.MAX_VALUE) {
         return false;
       }
     }

@@ -22,7 +22,6 @@ import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -32,11 +31,6 @@ import java.io.IOException;
  */
 public class SimpleHopsComputation extends BasicComputation<LongWritable,
         SimpleHopsVertexValue, NullWritable, SimpleHopsMessage> {
-  /**
-   * Logger
-   */
-  private static final Logger LOG =
-          Logger.getLogger(SimpleHopsComputation.class);
   /**
    * The maximal degree of separation in our graphs. If a hops cannot be
    * calculated within 20 steps, the vertices probably aren't connected.
@@ -52,8 +46,6 @@ public class SimpleHopsComputation extends BasicComputation<LongWritable,
   public void compute(
           Vertex<LongWritable, SimpleHopsVertexValue, NullWritable> vertex,
           Iterable<SimpleHopsMessage> messages) throws IOException {
-    LOG.info("Running compute on node " + vertex.getId() + " in the " +
-             "superstep " + super.getSuperstep());
     this.vertex = vertex;
 
     if (super.getSuperstep() == 0) {
