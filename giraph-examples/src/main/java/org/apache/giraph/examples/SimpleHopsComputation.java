@@ -88,7 +88,7 @@ public class SimpleHopsComputation extends BasicComputation<LongWritable,
       if (message.isDestinationFound()) {
         this.vertex.getValue().updateHopsCounts(message);
       } else {
-        replyOrAnswerCurrentMessage(message);
+        replyOrForwardCurrentMessage(message);
       }
     }
   }
@@ -100,7 +100,7 @@ public class SimpleHopsComputation extends BasicComputation<LongWritable,
    *
    * @param message the message received from one of our neighbors
    */
-  private void replyOrAnswerCurrentMessage(SimpleHopsMessage message) {
+  private void replyOrForwardCurrentMessage(SimpleHopsMessage message) {
     if (this.vertex.getValue().hasProcessed(message)) {
       return;
     }

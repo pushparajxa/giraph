@@ -47,7 +47,7 @@ public class SimpleHopsVertexValue implements Writable {
    * A set of already processed request from one source to a target,
    * so that messages won't run too much in circles.
    */
-  private Set<Entry<Long, Long>> processedVertices =
+  private Set<Entry<Long, Long>> processedMessages =
           new HashSet<Entry<Long, Long>>();
 
   /**
@@ -65,7 +65,7 @@ public class SimpleHopsVertexValue implements Writable {
    * @return true if the list has been already processed, otherwise false
    */
   public boolean hasProcessed(SimpleHopsMessage message) {
-    return this.processedVertices.contains(getEntry(message));
+    return this.processedMessages.contains(getEntry(message));
   }
 
   /**
@@ -76,7 +76,7 @@ public class SimpleHopsVertexValue implements Writable {
    *                .giraph.examples.SimpleHopsComputation}
    */
   public void isProcessing(SimpleHopsMessage message) {
-    this.processedVertices.add(getEntry(message));
+    this.processedMessages.add(getEntry(message));
   }
 
   /**
@@ -136,9 +136,9 @@ public class SimpleHopsVertexValue implements Writable {
       dataOutput.writeInt(entry.getValue());
     }
 
-    dataOutput.writeInt(this.processedVertices.size());
+    dataOutput.writeInt(this.processedMessages.size());
 
-    for (Entry<Long, Long> entry : this.processedVertices) {
+    for (Entry<Long, Long> entry : this.processedMessages) {
       dataOutput.writeLong(entry.getKey());
       dataOutput.writeLong(entry.getValue());
     }
@@ -156,7 +156,7 @@ public class SimpleHopsVertexValue implements Writable {
     size = dataInput.readInt();
 
     for (int i = 0; i < size; i++) {
-      this.processedVertices.add(new SimpleEntry<Long, Long>(
+      this.processedMessages.add(new SimpleEntry<Long, Long>(
               dataInput.readLong(), dataInput.readLong()));
     }
   }
