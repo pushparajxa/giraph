@@ -31,6 +31,12 @@ public class NodePartitioningVertexData extends VertexData {
   private int nodeColor;
 
   /**
+   * Flag, which indicates if the color has changed since it has been reset
+   * the last time
+   */
+  private boolean hasColorChanged;
+
+  /**
    * Default constructor for reflection
    */
   public NodePartitioningVertexData() {
@@ -41,8 +47,17 @@ public class NodePartitioningVertexData extends VertexData {
     return nodeColor;
   }
 
+  /**
+   * Sets the new node color and checks if it has changed,
+   * in that case it also sets the flag {@code hasColorChanged}
+   *
+   * @param nodeColor the new color of the current vertex
+   */
   public void setNodeColor(int nodeColor) {
-    this.nodeColor = nodeColor;
+    if (this.nodeColor != nodeColor) {
+      this.nodeColor = nodeColor;
+      this.hasColorChanged = true;
+    }
   }
 
   /**
@@ -50,7 +65,7 @@ public class NodePartitioningVertexData extends VertexData {
    * neighbors - the number of neighbors in the same color</code>
    *
    * @return the energy of the current node (how many neighbors are of a
-   *         different color)
+   * different color)
    */
   public int getNodeEnergy() {
     return super.getNumberOfNeighbors() -
@@ -62,7 +77,7 @@ public class NodePartitioningVertexData extends VertexData {
    * current color.
    *
    * @return the number of neighbors which have the same color as the current
-   *         node.
+   * node.
    */
   public int getNumberOfNeighborsWithCurrentColor() {
     return super.getNumberOfNeighbors(getNodeColor());
@@ -85,5 +100,16 @@ public class NodePartitioningVertexData extends VertexData {
   @Override
   public String toString() {
     return Integer.toString(this.nodeColor);
+  }
+
+  public boolean getHasColorChanged() {
+    return this.hasColorChanged;
+  }
+
+  /**
+   * resets the {@code hasColorChanged}-flag and sets it back to false
+   */
+  public void resetHasColorChanged() {
+    this.hasColorChanged = false;
   }
 }

@@ -17,8 +17,6 @@
  */
 package org.apache.giraph.examples.jabeja;
 
-import org.apache.hadoop.io.Writable;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -29,19 +27,25 @@ import java.util.Map;
  * Defines the base structure for all date necessary for vertices, for both
  * Edge- and Node-partitioning.
  */
-public class VertexData implements Writable {
+public class VertexData extends BaseWritable {
   /**
    * The key is the id of the neighbor, the value is the color.
    * this property is stored
    */
-  private final Map<Long, Integer> neighboringColors =
-          new HashMap<Long, Integer>();
+  private final Map<Long, NeighborInformation> neighborInformation =
+    new HashMap<Long, NeighborInformation>();
 
   /**
    * The key is the color, the value is how often the color exists.
    * this property is calculated
    */
   private Map<Integer, Integer> neighboringColorRatio;
+
+  /**
+   * Flag which indicates, if the colored degrees have changed since it has
+   * been reset the last time.
+   */
+  private boolean haveColoredDegreesChanged;
 
   /**
    * Default constructor for reflection
@@ -51,8 +55,8 @@ public class VertexData implements Writable {
 
   /**
    * @return data for a histogram for the colors of all neighbors.
-   *         How often each of the colors is represented between the neighbors.
-   *         If a color isn't represented, it's not in the final Map.
+   * How often each of the colors is represented between the neighbors.
+   * If a color isn't represented, it's not in the final Map.
    */
   public Map<Integer, Integer> getNeighboringColorRatio() {
     if (this.neighboringColorRatio == null) {
@@ -68,18 +72,49 @@ public class VertexData implements Writable {
    * @return a list of IDs of all the neighbors.
    */
   public Iterable<Long> getNeighbors() {
-    return this.neighboringColors.keySet();
+    return this.neighborInformation.keySet();
   }
 
   /**
-   * Update the neighboringColors map with a new or updated entry of a
-   * neighbor and its color
+   * Update the neighborInformation map with a new or updated entry of a
+   * neighbor and its color and set the flag
+   * {@code haveColoredDegreesChanged} to true
    *
    * @param neighborId    the id of the neighbor (could be node or edge)
    * @param neighborColor the color of the neighbor
    */
   public void setNeighborWithColor(long neighborId, int neighborColor) {
-    this.neighboringColors.put(neighborId, neighborColor);
+    NeighborInformation info = this.neighborInformation.get(neighborId);
+
+    if ((info != null && info.getColor() != neighborColor) || (info == null)) {
+      if (info == null) {
+        info = new NeighborInformation();
+        this.neighborInformation.put(neighborId, info);
+      }
+
+      info.setColor(neighborColor);
+      this.haveColoredDegreesChanged = true;
+    }
+  }
+
+  /**
+   * Updates the neighboring color ratio for the neighbor with the id
+   * {@code neighborId}
+   *
+   * @param neighborId            the id of the neighbor (could be node or edge)
+   * @param neighboringColorRatio the neighboring color ratio of this neighbor
+   */
+  public void setNeighborWithColorRatio(
+    long neighborId, Map<Integer, Integer> neighboringColorRatio) {
+
+    NeighborInformation info = this.neighborInformation.get(neighborId);
+
+    if (info == null) {
+      info = new NeighborInformation();
+      this.neighborInformation.put(neighborId, info);
+    }
+
+    info.setNeighboringColorRatio(neighboringColorRatio);
   }
 
   /**
@@ -106,7 +141,7 @@ public class VertexData implements Writable {
    * @return the number of neighbors
    */
   public int getNumberOfNeighbors() {
-    return this.neighboringColors.size();
+    return this.neighborInformation.size();
   }
 
   /**
@@ -117,7 +152,7 @@ public class VertexData implements Writable {
    */
   public int getNumberOfNeighbors(int color) {
     Integer numberOfNeighborsInColor =
-            getNeighboringColorRatio().get(color);
+      getNeighboringColorRatio().get(color);
 
     if (numberOfNeighborsInColor == null) {
       return 0;
@@ -144,8 +179,9 @@ public class VertexData implements Writable {
   private void initializeNeighboringColorRatio() {
     this.neighboringColorRatio = new HashMap<Integer, Integer>();
 
-    for (Map.Entry<Long, Integer> item : this.neighboringColors.entrySet()) {
-      addColorToNeighboringColoRatio(item.getValue());
+    for (Map.Entry<Long, NeighborInformation> item : this.neighborInformation
+      .entrySet()) {
+      addColorToNeighboringColoRatio(item.getValue().getColor());
     }
   }
 
@@ -158,14 +194,20 @@ public class VertexData implements Writable {
    * @param input DataInput from readFields
    */
   private void readNeighboringColors(DataInput input) throws IOException {
-    int numberOfNeighbors = input.readInt();
+    readMap(input, this.neighborInformation, LONG_VALUE_READER,
+      new ValueReader<NeighborInformation>() {
+        @Override
+        public NeighborInformation readValue(DataInput input)
+          throws IOException {
+          NeighborInformation info = new NeighborInformation();
 
-    for (int i = 0; i < numberOfNeighbors; i++) {
-      Long neighborId = input.readLong();
-      Integer neighborColor = input.readInt();
+          info.setColor(input.readInt());
+          readMap(input, info.getNeighboringColorRatio(),
+            INTEGER_VALUE_READER, INTEGER_VALUE_READER);
 
-      this.neighboringColors.put(neighborId, neighborColor);
-    }
+          return info;
+        }
+      });
   }
 
   /**
@@ -175,16 +217,62 @@ public class VertexData implements Writable {
    * @param output DataOutput from write
    */
   private void writeNeighboringColors(DataOutput output) throws IOException {
-    int numberOfNeighbors = this.neighboringColors.size();
+    writeMap(output, neighborInformation, LONG_VALUE_WRITER,
+      new ValueWriter<NeighborInformation>() {
+        @Override
+        public void writeValue(
+          DataOutput output, NeighborInformation value)
+          throws IOException {
+          output.writeInt(value.color);
+          writeMap(output, value.getNeighboringColorRatio(),
+            INTEGER_VALUE_WRITER, INTEGER_VALUE_WRITER);
+        }
+      });
+  }
 
-    output.writeInt(numberOfNeighbors);
+  public boolean getHaveColoredDegreesChanged() {
+    return this.haveColoredDegreesChanged;
+  }
 
-    for (Map.Entry<Long, Integer> item : this.neighboringColors.entrySet()) {
-      long neighborId = item.getKey();
-      int neighborColor = item.getValue();
+  /**
+   * Resets the {@code haveColoredDegreesChanged}-flag back to false
+   */
+  public void resetHaveColoredDegreesChanged() {
+    this.haveColoredDegreesChanged = false;
+  }
 
-      output.writeLong(neighborId);
-      output.writeInt(neighborColor);
+  /**
+   * The value type of the map which stores the neighbor with their IDs and
+   * additional information ({@code NeighborInformation}
+   */
+  public static class NeighborInformation {
+    /**
+     * The color of the neighbor
+     */
+    private int color;
+
+    /**
+     * The ratio of the neighboring colors of the neighbor
+     */
+    private Map<Integer, Integer> neighboringColorRatio =
+      new HashMap<Integer, Integer>();
+
+    public int getColor() {
+      return color;
+    }
+
+    public void setColor(int color) {
+      this.color = color;
+    }
+
+    public Map<Integer, Integer> getNeighboringColorRatio() {
+      return neighboringColorRatio;
+    }
+
+    public void setNeighboringColorRatio(
+      Map<Integer, Integer> neighboringColorRatio) {
+
+      this.neighboringColorRatio = neighboringColorRatio;
     }
   }
 }
