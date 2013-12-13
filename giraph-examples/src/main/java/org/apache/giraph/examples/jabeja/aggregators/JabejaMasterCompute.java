@@ -1,4 +1,4 @@
-package org.apache.giraph.examples.jabeja.aggregator;
+package org.apache.giraph.examples.jabeja.aggregators;
 
 import org.apache.giraph.aggregators.DoubleSumAggregator;
 import org.apache.giraph.master.DefaultMasterCompute;
