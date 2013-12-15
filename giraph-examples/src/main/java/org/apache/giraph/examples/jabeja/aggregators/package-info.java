@@ -18,6 +18,6 @@
 /**
  * Package for Ja-Be-Ja algorithm Aggregators
  * (https://www.sics.se/~amir/files/download/papers/jabeja.pdf)
- * and other distributed graph partitioning versions.
+ * and other distributed graph partitioning versions.123
  */
 package org.apache.giraph.examples.jabeja.aggregators;
