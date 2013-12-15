@@ -26,14 +26,14 @@ import org.apache.hadoop.io.DoubleWritable;
  * */
 public class JabejaMasterCompute extends DefaultMasterCompute {
   /** Name of the Energy funcation valus aggregator */
-  public static final String ENEREGY ="Energy";
+  public static final String ENEREGY = "Energy";
 
   @Override
   public void compute() {
     /**
      * This gives the enery after each super step.
      */
-    DoubleWritable val =getAggregatedValue(ENEREGY);
+    DoubleWritable val = getAggregatedValue(ENEREGY);
   }
 
   @Override
