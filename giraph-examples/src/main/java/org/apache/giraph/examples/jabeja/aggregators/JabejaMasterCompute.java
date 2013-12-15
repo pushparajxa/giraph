@@ -19,7 +19,6 @@ package org.apache.giraph.examples.jabeja.aggregators;
 
 import org.apache.giraph.aggregators.DoubleSumAggregator;
 import org.apache.giraph.master.DefaultMasterCompute;
-import org.apache.hadoop.io.DoubleWritable;
 
 /**
  * Master Compute class for using aggrgators
@@ -33,7 +32,7 @@ public class JabejaMasterCompute extends DefaultMasterCompute {
     /**
      * This gives the enery after each super step.
      */
-    DoubleWritable val = getAggregatedValue(ENEREGY);
+    // DoubleWritable val = getAggregatedValue(ENEREGY);
   }
 
   @Override
