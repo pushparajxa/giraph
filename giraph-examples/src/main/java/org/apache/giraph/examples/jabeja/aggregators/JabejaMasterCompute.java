@@ -17,29 +17,28 @@
  */
 package org.apache.giraph.examples.jabeja.aggregators;
 
-
 import org.apache.giraph.aggregators.DoubleSumAggregator;
 import org.apache.giraph.master.DefaultMasterCompute;
 import org.apache.hadoop.io.DoubleWritable;
 
-/** Master Compute class for using aggrgators
- * 
- *  */
+/**
+ * Master Compute class for using aggrgators
+ * */
 public class JabejaMasterCompute extends DefaultMasterCompute {
-	/** Name of the Energy funcation valus aggregator */
-  public static final String Energy="Energy";
-  
+  /** Name of the Energy funcation valus aggregator */
+  public static final String ENEREGY ="Energy";
+
   @Override
   public void compute() {
-	  /**
-	   * This gives the enery after each super step.
-	   */
-    DoubleWritable val  = getAggregatedValue(Energy);
+    /**
+     * This gives the enery after each super step.
+     */
+    DoubleWritable val =getAggregatedValue(ENEREGY);
   }
-  
+
   @Override
   public void initialize() throws InstantiationException,
-   IllegalAccessException {
-    registerAggregator(Energy, DoubleSumAggregator.class);
+      IllegalAccessException {
+    registerAggregator(ENEREGY, DoubleSumAggregator.class);
   }
 }
