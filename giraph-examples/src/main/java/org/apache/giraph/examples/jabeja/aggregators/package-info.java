@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 /**
- * Package for Ja-Be-Ja algorithm
+ * Package for Ja-Be-Ja algorithm Aggregators
  * (https://www.sics.se/~amir/files/download/papers/jabeja.pdf)
  * and other distributed graph partitioning versions.
  */
