@@ -18,8 +18,13 @@
 package org.apache.giraph.examples.jabeja;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
+import org.apache.giraph.edge.Edge;
+import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.IntWritable;
@@ -57,27 +62,312 @@ public class NodePartitioningComputation
    * The currently processed vertex
    */
   private Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex;
+  /**
+   * This edge is locked and sent in Request to swap
+   */
+  private Long lockedEdgeTargetVertex;
+  /**
+   * Index pointing to the next edge to be locked
+   */
+  private int lockEdgeIndex = 0;
+  /**
+   * Variable storing this vertex data.
+   */
+  private NodePartitioningVertexData verData;
 
   @Override
   public void compute(
       Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex,
       Iterable<Message> messages) throws IOException {
     this.vertex = vertex;
+    this.verData = this.vertex.getValue();
 
-    if (super.getSuperstep() < 2) {
+    if (super.getSuperstep() < 3) {
       initializeGraph(messages);
     } else {
-      // the 2nd step (mode == 1) is the same as the first step after the
-      // initialization (Superstep == 2) since at this time we get the final
-      // colors and can announce the degree in case it has changed.
-      int mode = (int) ((super.getSuperstep() - 1) % 5);
-
-      runJaBeJaAlgorithm(mode, messages);
+      if (getSuperstep() % 3 == 0) {
+        processReqeustMessages(messages);
+      }
+      if (getSuperstep() % 3 == 1) {
+        processRequestResponses(messages);
+      }
+      if (getSuperstep() % 3 == 2) {
+        processUpdateMessages(messages);
+      }
+    }
+    /*
+     * Calculate energies After sending the Request to swap messages and before
+     * receiving the Request Messages.
+     */
+    if (getSuperstep() % 3 == 2) {
+      aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
     }
 
     if (isTimeToStop()) {
       this.vertex.voteToHalt();
     }
+  }
+
+  /**
+   * This method is used to calculate the energy
+   * 
+   * @return
+   */
+  private IntWritable calculateEnergy() {
+    int energy = 0;
+    for (Map.Entry<Long, OwnEdge> e : verData.outEdges.entrySet()) {
+      energy = energy
+          + calculateEnergyOfEdge(e.getKey(), e.getValue().details.color.get());
+    }
+    return new IntWritable(energy);
+  }
+
+  /**
+   * This method is used to update the edge colors which are neighbors of some
+   * this vertex's edges.
+   * 
+   * @param messages
+   */
+  private void processUpdateMessages(Iterable<Message> messages) {
+    for (Message msg : messages) {
+      UpdateMessage upm = (UpdateMessage) msg;
+      JabejaEdge je = upm.getEdge();
+      /*
+       * 1. Search for this edge in inEdges, if not 2. Search in outEdges.
+       */
+      boolean done = false;
+      for (Long l : verData.inEdges.keySet()) {
+        if (l.equals(je.sourceVetex.get())) {
+          verData.inEdges.get(l).color = new IntWritable(je.color.get());
+          done = true;
+        }
+      }
+      if (done) {
+        continue;
+      } else {
+        ArrayList<JabejaEdge> edges = new ArrayList<JabejaEdge>();
+        for (Map.Entry<Long, OwnEdge> e : verData.outEdges.entrySet()) {
+          edges.addAll(e.getValue().neighbours.values());
+        }
+        for (JabejaEdge jedge : edges) {
+          if (jedge.sourceVetex.get() == je.sourceVetex.get()
+              && jedge.destVertex.get() == je.sourceVetex.get()) {
+            jedge.color = new IntWritable(je.color.get());
+          }
+        }
+      }
+
+    }
+    // Send Request to swap.
+    /**
+     * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
+     * Select some random vertex and send all the edge data[neighbour
+     * information] about the locked one in above.
+     */
+    ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
+    lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
+    /**
+     * Until Random vertex getter functionality implemented lets send it to the
+     * lockedEdgeTargetVertex. Send a RequestMessage which conatins all the
+     * neighbouring edges of this edge.And the sourceVertexId, that is the
+     * request sending vertex's id.
+     */
+
+    ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
+        verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+
+    /*
+     * Add the outEdges of this vertex
+     */
+    for (Long l : verData.outEdges.keySet()) {
+      if (l != lockedEdgeTargetVertex)
+        neighbrs.add(verData.outEdges.get(l).details);
+    }
+    /*
+     * Adds the incoming edges at this vertex.
+     */
+    neighbrs.addAll(verData.inEdges.values());
+
+    ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+        verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+    int myColor = rm.requstEdge.color.get();
+    rm.energy = calculateEnergyOfRequest(rm, myColor);
+    sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
+  }
+
+  /**
+   * This method will process the responses received after sending the Request
+   * Messages
+   */
+  private void processRequestResponses(Iterable<Message> messages) {
+    for (Message msg : messages) {
+
+      if (msg instanceof RequestNotProcessedMessage) {
+
+      } else if (msg instanceof RequestNotSucceededMessage) {
+
+      } else if (msg instanceof RequestCancelledMessage) {
+
+      } else if (msg instanceof RequestSucceededMessage) {
+        RequestSucceededMessage rsm = (RequestSucceededMessage) msg;
+        JabejaEdge edge = rsm.edge;
+        verData.outEdges.get(edge.destVertex).details.color = new IntWritable(
+            edge.color.get());
+        /* Send this update to neighbors of this edge */
+        /*
+         * 1. To inedges of this vertex. 2. To neighbour edges at the end of
+         * other vetex for this vertex.
+         */
+        for (Long l : verData.inEdges.keySet()) {
+          sendMessage(new LongWritable(l),
+              new UpdateMessage(this.vertex.getId(), edge));
+        }
+        for (JabejaEdge je : verData.outEdges.get(edge.destVertex).neighbours
+            .values()) {
+          sendMessage(je.sourceVetex, new UpdateMessage(this.vertex.getId(),
+              edge));
+        }
+      } else {
+
+      }
+    }
+
+  }
+
+  /**
+   * This method processes the RequestMessage for swapping the color of the edge
+   * 
+   * @param messages
+   */
+  private void processReqeustMessages(Iterable<Message> messages) {
+    /*
+     * 1. Select the edge with which after swapping the energy is less 2.
+     * Calculate the energy of the request vertex 3. If the swap acceptable send
+     * SuccessMessage 4. If swap not successfully send Not successful message 5.
+     * If request is satisfied send RequestNot processed message. 6. In case of
+     * swap success send propagation of changes to the other vertices.
+     * 
+     * HashMap<Long, Integer> energies = new HashMap<Long, Integer>();
+     * 
+     * for (Long l : verData.outEdges.keySet()) { if (l !=
+     * lockedEdgeTargetVertex) energies.put(l, calculateEnergyOfEdge(l,
+     * verData.outEdges.get(l))); }
+     */
+    boolean done = false;
+    for (Message m : messages) {
+      ReqstMessage rm = (ReqstMessage) m;
+      if (done == true) {
+        sendMessage(new LongWritable(rm.getVertexId()),
+            new RequestNotProcessedMessage(this.vertex.getId().get()));
+        continue;
+      }
+      if (verData.outEdges.keySet().size() == 1) {
+        /*
+         * Only one outgoing edge and that one is locked so send
+         * ReqeustCancelled message to all the requests.
+         */
+        for (Message msg : messages) {
+          sendMessage(new LongWritable(msg.getVertexId()),
+              new RequestCancelledMessage(this.vertex.getId().get()));
+        }
+        break;
+      } else {
+        for (Long l : verData.outEdges.keySet()) {
+          if (l != lockedEdgeTargetVertex) {
+            if (swapPossible(l, rm)) {
+              /*
+               * 1.Update local edge's colour 2.Send Update of the edge color to
+               * the reuqetsed vertex
+               */
+              int k = rm.requstEdge.color.get();
+              rm.requstEdge.color = verData.outEdges.get(l).details.color;
+              verData.outEdges.get(l).details.color = new IntWritable(k);
+              sendMessage(new LongWritable(rm.getVertexId()),
+                  new RequestSucceededMessage(this.vertex.getId(),
+                      rm.requstEdge));
+              done = true;
+              break;
+            }
+          }
+
+        }
+        /*
+         * Send Request for Swap Not Succeeded. Couldn't able to lower the
+         * energy by swapping. Process next request.
+         */
+        if (done == false) {
+          sendMessage(new LongWritable(m.getVertexId()),
+              new RequestNotSucceededMessage(this.vertex.getId().get()));
+        }
+
+      }
+
+    }
+  }
+
+  private boolean swapPossible(Long l, ReqstMessage rm) {
+    int edgeOldEnergy = calculateEnergyOfEdge(l,
+        verData.outEdges.get(l).details.color.get());
+    int requestOldEnergy = calculateEnergyOfRequest(rm,
+        rm.requstEdge.color.get());
+    int totalEneryOld = edgeOldEnergy + requestOldEnergy;
+    int edgeNewEnergy = calculateEnergyOfEdge(l, rm.requstEdge.color.get());
+    int requestNewEnergy = calculateEnergyOfRequest(rm,
+        verData.outEdges.get(l).details.color.get());
+    int totalEnergyNew = edgeNewEnergy + requestNewEnergy;
+    if (totalEnergyNew < totalEneryOld)
+      return true;
+    else
+      return false;
+  }
+
+  /**
+   * Calculates the energy of a RequestMessage for swapping
+   * 
+   * @param rm
+   */
+  private Integer calculateEnergyOfRequest(ReqstMessage rm, int color) {
+
+    int energy = 0;
+    for (JabejaEdge je : rm.nghbrs) {
+      if (color != je.color.get())
+        energy++;
+    }
+    return new Integer(energy);
+  }
+
+  /**
+   * Calculates the energy of a given edge
+   */
+  private Integer calculateEnergyOfEdge(Long lg, int color) {
+    OwnEdge ownEdge = verData.outEdges.get(lg);
+    // int myColor = ownEdge.details.color.get();
+    int energy = 0;
+    ArrayList<JabejaEdge> edges = new ArrayList<JabejaEdge>(
+        ownEdge.neighbours.values());
+
+    /*
+     * Add all the inedges
+     */
+    edges.addAll(verData.inEdges.values());
+    /*
+     * Add all the outgoing edges from this vertex except the edge in question
+     * and the lockedEdge which is sent as a request for swapping
+     */
+    for (Long l : verData.outEdges.keySet()) {
+      if (l != lockedEdgeTargetVertex && l != lg)
+        edges.add(verData.outEdges.get(l).details);
+    }
+
+    /*
+     * Now we have all edges , let's calculate the energu of the edge. Energy =
+     * no.of edges with color different than it's.
+     */
+    for (JabejaEdge j : edges) {
+      if (j.color.get() != color)
+        energy++;
+    }
+    return new Integer(energy);
   }
 
   /**
@@ -90,55 +380,130 @@ public class NodePartitioningComputation
    */
   private void initializeGraph(Iterable<Message> messages) {
     if (getSuperstep() == 0) {
-      initializeColor();
+      /**
+       * Announce colour of the outgoing edges
+       */
       announceColor();
-    } else {
-      storeColorsOfNodes(messages);
-      announceColorToNewNeighbors(messages);
+    } else if (getSuperstep() == 1) {
+      storeZeroMessages(messages);
+    } else if (getSuperstep() == 2) {
+      storeFirstMessages(messages);
+      // Send Request to swap.
+      /**
+       * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
+       * Select some random vertex and send all the edge data[neighbour
+       * information] about the locked one in above.
+       */
+      ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
+      lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
+      /**
+       * Until Random vertex getter functionality implemented lets send it to
+       * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
+       * the neighbouring edges of this edge.And the sourceVertexId, that is the
+       * request sending vertex's id.
+       */
+
+      ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
+          verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+
+      /*
+       * Add the outEdges of this vertex
+       */
+      for (Long l : verData.outEdges.keySet()) {
+        if (l != lockedEdgeTargetVertex)
+          neighbrs.add(verData.outEdges.get(l).details);
+      }
+      /*
+       * Adds the incoming edges at this vertex.
+       */
+      neighbrs.addAll(verData.inEdges.values());
+
+      ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+          verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+      int myColor = rm.requstEdge.color.get();
+      rm.energy = calculateEnergyOfRequest(rm, myColor);
+      sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
     }
   }
 
   /**
-   * After the graph has been initialized in the first 2 steps, this function is
-   * executed and will run the actual JaBeJa algorithm
+   * Store the FirstMessages and send request for color swapping.
    * 
-   * @param mode
-   *          The JaBeJa algorithm has multiple rounds, and in each round
-   *          several sub-steps are performed, mode indicates which sub-step
-   *          should be performed.
+   * @param messages
+   */
+  private void storeFirstMessages(Iterable<Message> messages) {
+    for (Message m : messages) {
+      FirstMessage fm = (FirstMessage) m;
+
+      this.vertex.getValue().outEdges.get(fm.getVertexId()).neighbours
+          .putAll(fm.getEdges());
+
+    }
+  }
+
+  /**
+   * Stores the incoming edges's information. These messages are sent in
+   * SuperStep 0 and received in Superstep 1. And send the outEdges of yours to
+   * the vertex which sent you this message.
+   * 
+   * @param messages
+   */
+  private void storeZeroMessages(Iterable<Message> messages) {
+    /*
+     * Store all the incoming edges
+     */
+    for (Message m : messages) {
+      ZeroMessage zm = (ZeroMessage) m;
+      JabejaEdge je = zm.getEdge();
+      this.vertex.getValue().inEdges.put(je.sourceVetex.get(), je);
+
+    }
+    for (Message msg : messages) {
+      /* Populate the map , which will be sent */
+      HashMap<Long, JabejaEdge> outEdges2 = new HashMap<Long, JabejaEdge>();
+      for (Map.Entry<Long, OwnEdge> e : this.vertex.getValue().outEdges
+          .entrySet()) {
+        outEdges2.put(e.getKey(), e.getValue().details);
+      }
+      /*
+       * put the in-edges since they are neighbors of the edge from which we got
+       * this incoming message
+       */
+      for (Map.Entry<Long, JabejaEdge> e : verData.inEdges.entrySet()) {
+        if (e.getKey() != msg.getVertexId()) {
+          outEdges2.put(e.getKey(), e.getValue());
+        }
+      }
+      sendMessage(new LongWritable(msg.getVertexId()), new FirstMessage(
+          this.vertex.getId(), outEdges2));
+    }
+
+  }
+
+  /**
+   * After the graph has been initialized in the first 2 steps, this function is
+   * executed and will run the actual JaBeJa algorithm * @param mode The JaBeJa
+   * algorithm has multiple rounds, and in each round several sub-steps are
+   * performed, mode indicates which sub-step should be performed.
+   * 
    * @param messages
    *          The messages sent to this Vertex
    */
-  private void runJaBeJaAlgorithm(int mode, Iterable<Message> messages) {
-    switch (mode) {
-    case 0: // new round started, announce your new color
-      announceColorIfChanged();
-      break;
-    case 1:
-      // update colors of your neighboring nodes,
-      // and announce your new degree for each color
-      storeColorsOfNodes(messages);
-      announceColoredDegreesIfChanged();
-      break;
-    case 2:
-      // updated colored degrees of all nodes and find a partner to
-      // initiate the exchange with
-      storeColoredDegreesOfNodes(messages);
-      Long partnerId = findPartner();
-
-      if (partnerId != null) {
-        initiateColoExchangeHandshake(partnerId);
-      } else {
-        // if no partner could be found, this node probably has already the
-        // best possible color
-        this.vertex.voteToHalt();
-      }
-      break;
-    default:
-      mode = mode - 3;
-      continueColorExchange(mode, messages);
-    }
-  }
+  /*
+   * private void runJaBeJaAlgorithm(int mode, Iterable<Message> messages) {
+   * switch (mode) { case 0: // new round started, announce your new color
+   * announceColorIfChanged(); break; case 1: // update colors of your
+   * neighboring nodes, // and announce your new degree for each color
+   * storeColorsOfNodes(messages); announceColoredDegreesIfChanged(); break;
+   * case 2: // updated colored degrees of all nodes and find a partner to //
+   * initiate the exchange with storeColoredDegreesOfNodes(messages); Long
+   * partnerId = findPartner();
+   * 
+   * if (partnerId != null) { initiateColoExchangeHandshake(partnerId); } else {
+   * // if no partner could be found, this node probably has already the // best
+   * possible color this.vertex.voteToHalt(); } break; default: mode = mode - 3;
+   * continueColorExchange(mode, messages); } }
+   */
 
   /**
    * Checks if it is time to stop (if enough steps have been done)
@@ -151,133 +516,24 @@ public class NodePartitioningComputation
   }
 
   /**
-   * Set the color of the own node.
-   */
-  private void initializeColor() {
-    int numberOfColors = getNumberOfColors();
-    int myColor = (int) getRandomNumber(numberOfColors);
-
-    this.vertex.getValue().setNodeColor(myColor);
-  }
-
-  /**
-   * Announces the color, only if it has changed after it has been announced the
-   * last time
-   */
-  private void announceColorIfChanged() {
-    if (this.vertex.getValue().getHasColorChanged()) {
-      announceColor();
-      this.vertex.getValue().resetHasColorChanged();
-    }
-  }
-
-  /**
    * Announce the current color to all connected vertices.
    */
   private void announceColor() {
-    // This should be vertex.vertex.getEdges();. Because I didn't see any code
-// populating the vertex's neighbours.
-    for (Long neighborId : this.vertex.getValue().getNeighbors()) {
-      sendCurrentVertexColor(new LongWritable(neighborId));
+    /**
+     * for (Long neighborId : this.vertex.getValue().getNeighbors()) {
+     * sendCurrentVertexColor(new LongWritable(neighborId)); }
+     */
+    for (Edge<LongWritable, IntWritable> e : this.vertex.getEdges()) {
+      this.vertex.getValue().outEdges.put(e.getTargetVertexId().get(),
+          new OwnEdge(new JabejaEdge(this.vertex.getId(),
+              e.getTargetVertexId(), e.getValue())));
+      sendMessage(
+          e.getTargetVertexId(),
+          new ZeroMessage(this.vertex.getId(), new JabejaEdge(this.vertex
+              .getId(), e.getTargetVertexId(), e.getValue())));
     }
   }
 
-  /**
-   * Store the color of all neighboring nodes. Neighboring through outgoing as
-   * well as incoming edges.
-   * 
-   * @param messages
-   *          received messages from nodes with their colors.
-   */
-  private void storeColorsOfNodes(Iterable<Message> messages) {
-    for (Message msg : messages) {
-      this.vertex.getValue().setNeighborWithColor(msg.getVertexId(),
-          msg.getColor());
-    }
-  }
-
-  /**
-   * Reply to all received messages with the current color.
-   * 
-   * @param messages
-   *          all received messages.
-   */
-  private void announceColorToNewNeighbors(Iterable<Message> messages) {
-    for (Message msg : messages) {
-      sendCurrentVertexColor(new LongWritable(msg.getVertexId()));
-    }
-  }
-
-  /**
-   * Announces the different colored degrees, only if they have changed after
-   * they have been announced the last time.
-   */
-  private void announceColoredDegreesIfChanged() {
-    if (this.vertex.getValue().getHaveColoredDegreesChanged()) {
-      announceColoredDegrees();
-      this.vertex.getValue().resetHaveColoredDegreesChanged();
-    }
-  }
-
-  /**
-   * Announces the different colored degrees to all its neighbors.
-   */
-  private void announceColoredDegrees() {
-    for (Long neighborId : this.vertex.getValue().getNeighbors()) {
-      super.sendMessage(new LongWritable(neighborId), new Message(this.vertex
-          .getId().get(), this.vertex.getValue().getNeighboringColorRatio()));
-    }
-  }
-
-  /**
-   * Updates the information about different colored degrees of its neighbors
-   * 
-   * @param messages
-   *          The messages sent to this Vertex containing the colored degrees
-   */
-  private void storeColoredDegreesOfNodes(Iterable<Message> messages) {
-    for (Message message : messages) {
-      this.vertex.getValue().setNeighborWithColorRatio(message.getVertexId(),
-          message.getNeighboringColorRatio());
-    }
-  }
-
-  /**
-   * TODO Find a partner to exchange the colors with
-   * 
-   * @return the vertex ID of the partner with whom the colors will be exchanged
-   */
-  private Long findPartner() {
-    return 0L;
-  }
-
-  /**
-   * TODO initialized the color-exchange handshake
-   * 
-   * @param partnerId
-   *          the id of the vertex with whom I want to exchange colors
-   */
-  private void initiateColoExchangeHandshake(long partnerId) {
-  }
-
-  /**
-   * TODO This is the part of the JaBeJa algorithm which implements the full
-   * color exchange
-   * 
-   * @param mode
-   *          the sub-step of the color exchange
-   * @param messages
-   *          The messages sent to this Vertex
-   */
-  private void continueColorExchange(int mode, Iterable<Message> messages) {
-  }
-
-  /**
-   * Checks if the Maximum Number of Supersteps has been configured, otherwise
-   * uses the default value.
-   * 
-   * @return the maximum number of supersteps for which the algorithm should run
-   */
   private long getMaxNumberOfSuperSteps() {
     if (MAX_NUMBER_OF_SUPERSTEPS == null) {
       MAX_NUMBER_OF_SUPERSTEPS = super.getConf().getInt(
@@ -286,75 +542,4 @@ public class NodePartitioningComputation
     return MAX_NUMBER_OF_SUPERSTEPS;
   }
 
-  /**
-   * Send a message to a vertex with the current color and id, so that this
-   * vertex would be able to reply.
-   * 
-   * @param targetId
-   *          id of the vertex to which the message should be sent
-   */
-  private void sendCurrentVertexColor(LongWritable targetId) {
-    super.sendMessage(targetId, new Message(this.vertex.getId().get(),
-        this.vertex.getValue().getNodeColor()));
-  }
-
-  /**
-   * @return the configured or default number of different colors in the current
-   *         graph.
-   */
-  private int getNumberOfColors() {
-    return super.getConf().getInt("JaBeJa.NumberOfColors",
-        DEFAULT_NUMBER_OF_COLORS);
-  }
-
-  /**
-   * generates a 64bit random number within an upper boundary.
-   * 
-   * @param exclusiveMaxValue
-   *          the exclusive maximum value of the to be generated random value
-   * @return a random number between 0 (inclusive) and exclusiveMaxValue
-   *         (exclusive)
-   */
-  private long getRandomNumber(long exclusiveMaxValue) {
-    if (this.randomGenerator == null) {
-      initializeRandomGenerator();
-    }
-    return (long) (this.randomGenerator.nextDouble() * exclusiveMaxValue);
-  }
-
-  /**
-   * Initializes the random generator, either with the default constructor or
-   * with a seed which will guarantee, that the same vertex in the same round
-   * will always generate the same random values.
-   */
-  private void initializeRandomGenerator() {
-    int configuredSeed = super.getConf().getInt("JaBeJa.RandomSeed", 0);
-
-    // if you want to have a totally random number just set the config to -1
-    if (configuredSeed == -1) {
-      this.randomGenerator = new Random();
-    } else {
-      long seed = calculateHashCode(String.format("%d#%d#%d", configuredSeed,
-          super.getSuperstep(), this.vertex.getId().get()));
-      this.randomGenerator = new Random(seed);
-    }
-  }
-
-  /**
-   * Based on the hashCode function defined in {@link java.lang.String}, with
-   * the difference that it returns a long instead of only an integer.
-   * 
-   * @param value
-   *          the String for which the hash-code should be calculated
-   * @return a 64bit hash-code
-   */
-  private static long calculateHashCode(String value) {
-    int hashCode = 0;
-
-    for (int i = 0; i < value.length(); i++) {
-      hashCode = 31 * hashCode + value.charAt(i);
-    }
-
-    return hashCode;
-  }
 }

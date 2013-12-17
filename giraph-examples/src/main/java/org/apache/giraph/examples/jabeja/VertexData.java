@@ -29,23 +29,32 @@ import java.util.Map;
  */
 public class VertexData extends BaseWritable {
   /**
-   * The key is the id of the neighbor, the value is the color.
-   * this property is stored
+   * The key is the id of the neighbor, the value is the color. this property is
+   * stored
    */
-  private final Map<Long, NeighborInformation> neighborInformation =
-    new HashMap<Long, NeighborInformation>();
+  private final Map<Long, NeighborInformation> neighborInformation = new HashMap<Long, NeighborInformation>();
 
   /**
-   * The key is the color, the value is how often the color exists.
-   * this property is calculated
+   * The key is the color, the value is how often the color exists. this
+   * property is calculated
    */
   private Map<Integer, Integer> neighboringColorRatio;
 
   /**
-   * Flag which indicates, if the colored degrees have changed since it has
-   * been reset the last time.
+   * Flag which indicates, if the colored degrees have changed since it has been
+   * reset the last time.
    */
   private boolean haveColoredDegreesChanged;
+  /**
+   * This will contain information about the incoming edges from other vertices
+   * to this vertex.
+   */
+  public HashMap<Long, JabejaEdge> inEdges = new HashMap<Long, JabejaEdge>();
+  /**
+   * Thsi wil conatain information about the outGoing edges from this vertex.
+   * And neighbour information for these edges
+   */
+  public HashMap<Long, OwnEdge> outEdges = new HashMap<Long, OwnEdge>();
 
   /**
    * Default constructor for reflection
@@ -54,9 +63,9 @@ public class VertexData extends BaseWritable {
   }
 
   /**
-   * @return data for a histogram for the colors of all neighbors.
-   * How often each of the colors is represented between the neighbors.
-   * If a color isn't represented, it's not in the final Map.
+   * @return data for a histogram for the colors of all neighbors. How often
+   *         each of the colors is represented between the neighbors. If a color
+   *         isn't represented, it's not in the final Map.
    */
   public Map<Integer, Integer> getNeighboringColorRatio() {
     if (this.neighboringColorRatio == null) {
@@ -68,7 +77,7 @@ public class VertexData extends BaseWritable {
 
   /**
    * Returns a list of IDs of all the neighbors.
-   *
+   * 
    * @return a list of IDs of all the neighbors.
    */
   public Iterable<Long> getNeighbors() {
@@ -77,11 +86,13 @@ public class VertexData extends BaseWritable {
 
   /**
    * Update the neighborInformation map with a new or updated entry of a
-   * neighbor and its color and set the flag
-   * {@code haveColoredDegreesChanged} to true
-   *
-   * @param neighborId    the id of the neighbor (could be node or edge)
-   * @param neighborColor the color of the neighbor
+   * neighbor and its color and set the flag {@code haveColoredDegreesChanged}
+   * to true
+   * 
+   * @param neighborId
+   *          the id of the neighbor (could be node or edge)
+   * @param neighborColor
+   *          the color of the neighbor
    */
   public void setNeighborWithColor(long neighborId, int neighborColor) {
     NeighborInformation info = this.neighborInformation.get(neighborId);
@@ -100,12 +111,14 @@ public class VertexData extends BaseWritable {
   /**
    * Updates the neighboring color ratio for the neighbor with the id
    * {@code neighborId}
-   *
-   * @param neighborId            the id of the neighbor (could be node or edge)
-   * @param neighboringColorRatio the neighboring color ratio of this neighbor
+   * 
+   * @param neighborId
+   *          the id of the neighbor (could be node or edge)
+   * @param neighboringColorRatio
+   *          the neighboring color ratio of this neighbor
    */
-  public void setNeighborWithColorRatio(
-    long neighborId, Map<Integer, Integer> neighboringColorRatio) {
+  public void setNeighborWithColorRatio(long neighborId,
+      Map<Integer, Integer> neighboringColorRatio) {
 
     NeighborInformation info = this.neighborInformation.get(neighborId);
 
@@ -118,10 +131,11 @@ public class VertexData extends BaseWritable {
   }
 
   /**
-   * Check if the color already exists in the neighboringColorRatio-map. If
-   * not, create a new entry with the count 1, if yes than update the count +1
-   *
-   * @param color the color of one neighboring item
+   * Check if the color already exists in the neighboringColorRatio-map. If not,
+   * create a new entry with the count 1, if yes than update the count +1
+   * 
+   * @param color
+   *          the color of one neighboring item
    */
   private void addColorToNeighboringColoRatio(int color) {
     Integer numberOfColorAppearances = this.neighboringColorRatio.get(color);
@@ -137,7 +151,7 @@ public class VertexData extends BaseWritable {
 
   /**
    * Returns the number of neighbors
-   *
+   * 
    * @return the number of neighbors
    */
   public int getNumberOfNeighbors() {
@@ -146,13 +160,13 @@ public class VertexData extends BaseWritable {
 
   /**
    * Gets the number of neighbors in a specific color
-   *
-   * @param color color of the neighbors
+   * 
+   * @param color
+   *          color of the neighbors
    * @return the number of neighbors in the color <code>color</code>
    */
   public int getNumberOfNeighbors(int color) {
-    Integer numberOfNeighborsInColor =
-      getNeighboringColorRatio().get(color);
+    Integer numberOfNeighborsInColor = getNeighboringColorRatio().get(color);
 
     if (numberOfNeighborsInColor == null) {
       return 0;
@@ -172,62 +186,63 @@ public class VertexData extends BaseWritable {
   }
 
   /**
-   * Initializes the histogram for colors of all neighbors.
-   * How often each of the colors is represented between the neighbors.
-   * If a color isn't represented, it's not in the final Map.
+   * Initializes the histogram for colors of all neighbors. How often each of
+   * the colors is represented between the neighbors. If a color isn't
+   * represented, it's not in the final Map.
    */
   private void initializeNeighboringColorRatio() {
     this.neighboringColorRatio = new HashMap<Integer, Integer>();
 
     for (Map.Entry<Long, NeighborInformation> item : this.neighborInformation
-      .entrySet()) {
+        .entrySet()) {
       addColorToNeighboringColoRatio(item.getValue().getColor());
     }
   }
 
   /**
-   * since the vertex doesn't have any information about its neighbors,
-   * all the information needs to be stored in the vertex data. This
-   * includes the colors of all the neighbors, to be able to compute the
-   * algorithm for changing the color at all times
-   *
-   * @param input DataInput from readFields
+   * since the vertex doesn't have any information about its neighbors, all the
+   * information needs to be stored in the vertex data. This includes the colors
+   * of all the neighbors, to be able to compute the algorithm for changing the
+   * color at all times
+   * 
+   * @param input
+   *          DataInput from readFields
    */
   private void readNeighboringColors(DataInput input) throws IOException {
     readMap(input, this.neighborInformation, LONG_VALUE_READER,
-      new ValueReader<NeighborInformation>() {
-        @Override
-        public NeighborInformation readValue(DataInput input)
-          throws IOException {
-          NeighborInformation info = new NeighborInformation();
+        new ValueReader<NeighborInformation>() {
+          @Override
+          public NeighborInformation readValue(DataInput input)
+              throws IOException {
+            NeighborInformation info = new NeighborInformation();
 
-          info.setColor(input.readInt());
-          readMap(input, info.getNeighboringColorRatio(),
-            INTEGER_VALUE_READER, INTEGER_VALUE_READER);
+            info.setColor(input.readInt());
+            readMap(input, info.getNeighboringColorRatio(),
+                INTEGER_VALUE_READER, INTEGER_VALUE_READER);
 
-          return info;
-        }
-      });
+            return info;
+          }
+        });
   }
 
   /**
-   * Opposite to readNeighboringColors this method is to store the
-   * color information of all the neighbors.
-   *
-   * @param output DataOutput from write
+   * Opposite to readNeighboringColors this method is to store the color
+   * information of all the neighbors.
+   * 
+   * @param output
+   *          DataOutput from write
    */
   private void writeNeighboringColors(DataOutput output) throws IOException {
     writeMap(output, neighborInformation, LONG_VALUE_WRITER,
-      new ValueWriter<NeighborInformation>() {
-        @Override
-        public void writeValue(
-          DataOutput output, NeighborInformation value)
-          throws IOException {
-          output.writeInt(value.color);
-          writeMap(output, value.getNeighboringColorRatio(),
-            INTEGER_VALUE_WRITER, INTEGER_VALUE_WRITER);
-        }
-      });
+        new ValueWriter<NeighborInformation>() {
+          @Override
+          public void writeValue(DataOutput output, NeighborInformation value)
+              throws IOException {
+            output.writeInt(value.color);
+            writeMap(output, value.getNeighboringColorRatio(),
+                INTEGER_VALUE_WRITER, INTEGER_VALUE_WRITER);
+          }
+        });
   }
 
   public boolean getHaveColoredDegreesChanged() {
@@ -254,8 +269,7 @@ public class VertexData extends BaseWritable {
     /**
      * The ratio of the neighboring colors of the neighbor
      */
-    private Map<Integer, Integer> neighboringColorRatio =
-      new HashMap<Integer, Integer>();
+    private Map<Integer, Integer> neighboringColorRatio = new HashMap<Integer, Integer>();
 
     public int getColor() {
       return color;
@@ -270,7 +284,7 @@ public class VertexData extends BaseWritable {
     }
 
     public void setNeighboringColorRatio(
-      Map<Integer, Integer> neighboringColorRatio) {
+        Map<Integer, Integer> neighboringColorRatio) {
 
       this.neighboringColorRatio = neighboringColorRatio;
     }

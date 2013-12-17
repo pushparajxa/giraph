@@ -17,6 +17,8 @@
  */
 package org.apache.giraph.examples.jabeja.io;
 
+import java.util.Random;
+
 import org.apache.giraph.examples.jabeja.NodePartitioningVertexData;
 import org.apache.hadoop.io.IntWritable;
 
@@ -24,15 +26,30 @@ import org.apache.hadoop.io.IntWritable;
  * Random graph generator for the NodePartitioning problem.
  */
 public class NodePartitioningPseudoRandomVertexInputFormat extends
-        PseudoRandomVertexInputFormat<NodePartitioningVertexData, IntWritable> {
+    PseudoRandomVertexInputFormat<NodePartitioningVertexData, IntWritable> {
+  /**
+   * Since the JaBeJa algorithm is a Monte Carlo algorithm.
+   */
+  private Random randomGenerator = null;
+  /**
+   * Total number of colors.Default is 2.
+   */
+  private int totalNumberOfColors = 2;
+
   @Override
   protected NodePartitioningVertexData getVertexValue(long vertexId) {
     return new NodePartitioningVertexData();
   }
 
   @Override
-  protected IntWritable getEdgeValue(
-          long vertexSourceId, long vertexDestinationId) {
-    return new IntWritable(0);
+  protected IntWritable getEdgeValue(long vertexSourceId,
+      long vertexDestinationId) {
+    if (randomGenerator == null) {
+      totalNumberOfColors = getConf().getInt("JaBeJa.NumberOfColors",
+          totalNumberOfColors);
+      randomGenerator = new Random(totalNumberOfColors);
+    }
+    int color = (int) ((randomGenerator.nextDouble()) * totalNumberOfColors);
+    return new IntWritable(color);
   }
 }
