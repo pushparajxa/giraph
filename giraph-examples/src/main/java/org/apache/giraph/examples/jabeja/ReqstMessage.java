@@ -46,7 +46,7 @@ public class ReqstMessage extends Message {
   /**
    * Energy of this Edge or Request
    */
-  public Integer energy;
+  private Integer energy;
 
   /**
    * Default Constructor
@@ -60,6 +60,20 @@ public class ReqstMessage extends Message {
     setVertexId(id.get());
     this.requstEdge = details;
     this.nghbrs = neighbrs;
+  }
+
+  /**
+   * @return the energy
+   */
+  public Integer getEnergy() {
+    return energy;
+  }
+
+  /**
+   * @param energy the energy to set
+   */
+  public void setEnergy(Integer energy) {
+    this.energy = energy;
   }
 
 }

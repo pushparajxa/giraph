@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
@@ -41,7 +40,7 @@ public class NodePartitioningComputation
    * The default number of different colors, if no JaBeJa.NumberOfColors is
    * provided.
    */
-  private static final int DEFAULT_NUMBER_OF_COLORS = 2;
+  // private static final int DEFAULT_NUMBER_OF_COLORS = 2;
 
   /**
    * The default number for many supersteps this algorithm should run, if no
@@ -54,10 +53,7 @@ public class NodePartitioningComputation
    * algorithm should run
    */
   private static Integer MAX_NUMBER_OF_SUPERSTEPS = null;
-  /**
-   * Since the JaBeJa algorithm is a Monte Carlo algorithm.
-   */
-  private Random randomGenerator = new Random();
+
   /**
    * The currently processed vertex
    */
@@ -137,7 +133,7 @@ public class NodePartitioningComputation
        */
       boolean done = false;
       for (Long l : verData.inEdges.keySet()) {
-        if (l.equals(je.sourceVetex.get())) {
+        if (l.longValue() == je.sourceVetex.get()) {
           verData.inEdges.get(l).color = new IntWritable(je.color.get());
           done = true;
         }
@@ -180,7 +176,7 @@ public class NodePartitioningComputation
      * Add the outEdges of this vertex
      */
     for (Long l : verData.outEdges.keySet()) {
-      if (l != lockedEdgeTargetVertex)
+      if (l.longValue() != lockedEdgeTargetVertex.longValue())
         neighbrs.add(verData.outEdges.get(l).details);
     }
     /*
@@ -191,7 +187,7 @@ public class NodePartitioningComputation
     ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
         verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
     int myColor = rm.requstEdge.color.get();
-    rm.energy = calculateEnergyOfRequest(rm, myColor);
+    rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
     sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
   }
 
@@ -211,7 +207,7 @@ public class NodePartitioningComputation
       } else if (msg instanceof RequestSucceededMessage) {
         RequestSucceededMessage rsm = (RequestSucceededMessage) msg;
         JabejaEdge edge = rsm.edge;
-        verData.outEdges.get(edge.destVertex).details.color = new IntWritable(
+        verData.outEdges.get(edge.destVertex.get()).details.color = new IntWritable(
             edge.color.get());
         /* Send this update to neighbors of this edge */
         /*
@@ -273,7 +269,7 @@ public class NodePartitioningComputation
         break;
       } else {
         for (Long l : verData.outEdges.keySet()) {
-          if (l != lockedEdgeTargetVertex) {
+          if (l.longValue() != lockedEdgeTargetVertex.longValue()) {
             if (swapPossible(l, rm)) {
               /*
                * 1.Update local edge's colour 2.Send Update of the edge color to
@@ -333,7 +329,7 @@ public class NodePartitioningComputation
       if (color != je.color.get())
         energy++;
     }
-    return new Integer(energy);
+    return Integer.valueOf(energy);
   }
 
   /**
@@ -355,7 +351,8 @@ public class NodePartitioningComputation
      * and the lockedEdge which is sent as a request for swapping
      */
     for (Long l : verData.outEdges.keySet()) {
-      if (l != lockedEdgeTargetVertex && l != lg)
+      if (l.longValue() != lockedEdgeTargetVertex.longValue()
+          && l.longValue() != lg.longValue())
         edges.add(verData.outEdges.get(l).details);
     }
 
@@ -367,7 +364,7 @@ public class NodePartitioningComputation
       if (j.color.get() != color)
         energy++;
     }
-    return new Integer(energy);
+    return Integer.valueOf(energy);
   }
 
   /**
@@ -375,8 +372,7 @@ public class NodePartitioningComputation
    * initialized. It contains features for taking a random color as well as
    * announcing the color and finding all neighbors.
    * 
-   * @param messages
-   *          The messages sent to this Vertex
+   * @param messages The messages sent to this Vertex
    */
   private void initializeGraph(Iterable<Message> messages) {
     if (getSuperstep() == 0) {
@@ -410,7 +406,7 @@ public class NodePartitioningComputation
        * Add the outEdges of this vertex
        */
       for (Long l : verData.outEdges.keySet()) {
-        if (l != lockedEdgeTargetVertex)
+        if (l.longValue() != lockedEdgeTargetVertex.longValue())
           neighbrs.add(verData.outEdges.get(l).details);
       }
       /*
@@ -421,7 +417,7 @@ public class NodePartitioningComputation
       ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
           verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
       int myColor = rm.requstEdge.color.get();
-      rm.energy = calculateEnergyOfRequest(rm, myColor);
+      rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
       sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
     }
   }
@@ -486,8 +482,7 @@ public class NodePartitioningComputation
    * algorithm has multiple rounds, and in each round several sub-steps are
    * performed, mode indicates which sub-step should be performed.
    * 
-   * @param messages
-   *          The messages sent to this Vertex
+   * @param messages The messages sent to this Vertex
    */
   /*
    * private void runJaBeJaAlgorithm(int mode, Iterable<Message> messages) {
