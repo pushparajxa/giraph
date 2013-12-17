@@ -46,6 +46,7 @@ public class ReqstMessage extends Message {
    * The neighbours of this edge from the request vertex side end
    */
   public ArrayList<JabejaEdge> nghbrs;
+
   /**
    * Energy of this Edge or Request
    */
@@ -68,6 +69,7 @@ public class ReqstMessage extends Message {
   /**
    * @return the energy
    */
+
   public Integer getEnergy() {
     return energy;
   }
@@ -75,6 +77,7 @@ public class ReqstMessage extends Message {
   /**
    * @param energy the energy to set
    */
+
   public void setEnergy(Integer energy) {
     this.energy = energy;
   }

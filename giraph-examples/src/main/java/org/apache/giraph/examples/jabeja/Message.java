@@ -127,7 +127,7 @@ public class Message extends BaseWritable {
       Long l;
       long srcVertex, destVertex;
       for (i = 0; i < size; i++) {
-        l = new Long(dataInput.readLong());
+        l = Long.valueOf(dataInput.readLong());
         srcVertex = dataInput.readLong();
         destVertex = dataInput.readLong();
         color = dataInput.readInt();
