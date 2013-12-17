@@ -115,8 +115,9 @@ public class Message extends BaseWritable {
   @Override
   public void readFields(DataInput dataInput) throws IOException {
     this.vertexId = dataInput.readLong();
-    t.readFields(dataInput);
-    this.messageType = t.toString();
+    this.messageType = Text.readString(dataInput);
+    // t.readFields(dataInput);
+    // this.messageType = t.toString();
     if (messageType.equals(FIRST_MESSAGE)) {
       // Read the Map edges<Long,JabegaEdge>.1)Read the size 2) Then
 // Map entries.
