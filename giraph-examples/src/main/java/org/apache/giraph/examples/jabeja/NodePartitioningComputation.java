@@ -43,18 +43,6 @@ public class NodePartitioningComputation
   // private static final int DEFAULT_NUMBER_OF_COLORS = 2;
 
   /**
-   * The default number for many supersteps this algorithm should run, if no
-   * JaBeJa.MaxNumberOfSupersteps is provided
-   */
-  private static final int DEFAULT_MAX_NUMBER_OF_SUPERSTEPS = 100;
-
-  /**
-   * The actually defined maximum number of supersteps for how many this
-   * algorithm should run
-   */
-  private static Integer MAX_NUMBER_OF_SUPERSTEPS = null;
-
-  /**
    * The currently processed vertex
    */
   private Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex;
@@ -126,8 +114,8 @@ public class NodePartitioningComputation
    */
   private void processUpdateMessages(Iterable<Message> messages) {
     for (Message msg : messages) {
-      UpdateMessage upm = (UpdateMessage) msg;
-      JabejaEdge je = upm.getEdge();
+      // UpdateMessage upm = (UpdateMessage) msg;
+      JabejaEdge je = msg.getEdge();
       /*
        * 1. Search for this edge in inEdges, if not 2. Search in outEdges.
        */
@@ -184,9 +172,18 @@ public class NodePartitioningComputation
      */
     neighbrs.addAll(verData.inEdges.values());
 
-    ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
-        verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
-    int myColor = rm.requstEdge.color.get();
+    /*
+     * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+     * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs); int
+     * myColor = rm.requstEdge.color.get();
+     * rm.setEnergy(calculateEnergyOfRequest(rm, myColor)); sendMessage(new
+     * LongWritable(lockedEdgeTargetVertex), rm);
+     */
+
+    Message rm = new Message(this.vertex.getId().get(),
+        verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
+        Message.RQST_MESSAGE);
+    int myColor = rm.getEdge().color.get();
     rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
     sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
   }
@@ -196,17 +193,18 @@ public class NodePartitioningComputation
    * Messages
    */
   private void processRequestResponses(Iterable<Message> messages) {
+    String msgType;
     for (Message msg : messages) {
+      msgType = msg.getMessageType();
 
-      if (msg instanceof RequestNotProcessedMessage) {
+      if (msgType.equals(Message.RQST_NOT_PRCSS_MESSAGE)) {
 
-      } else if (msg instanceof RequestNotSucceededMessage) {
+      } else if (msgType.equals(Message.RQST_NOT_SUCC_MESSAGE)) {
 
-      } else if (msg instanceof RequestCancelledMessage) {
+      } else if (msgType.equals(Message.RQST_CANCL__MESSAGE)) {
 
-      } else if (msg instanceof RequestSucceededMessage) {
-        RequestSucceededMessage rsm = (RequestSucceededMessage) msg;
-        JabejaEdge edge = rsm.edge;
+      } else if (msgType.equals(Message.RQST_SUCC_MESSAGE)) {
+        JabejaEdge edge = msg.getEdge();
         verData.outEdges.get(edge.destVertex.get()).details.color = new IntWritable(
             edge.color.get());
         /* Send this update to neighbors of this edge */
@@ -215,13 +213,21 @@ public class NodePartitioningComputation
          * other vetex for this vertex.
          */
         for (Long l : verData.inEdges.keySet()) {
-          sendMessage(new LongWritable(l),
-              new UpdateMessage(this.vertex.getId(), edge));
+          /*
+           * sendMessage(new LongWritable(l), new
+           * UpdateMessage(this.vertex.getId(), edge));
+           */
+          sendMessage(new LongWritable(l), new Message(this.vertex.getId()
+              .get(), edge, Message.UPDATE_MESSAGE));
         }
         for (JabejaEdge je : verData.outEdges.get(edge.destVertex.get()).neighbours
             .values()) {
-          sendMessage(je.sourceVetex, new UpdateMessage(this.vertex.getId(),
-              edge));
+          /*
+           * sendMessage(je.sourceVetex, new UpdateMessage(this.vertex.getId(),
+           * edge));
+           */
+          sendMessage(je.sourceVetex, new Message(this.vertex.getId().get(),
+              edge, Message.UPDATE_MESSAGE));
         }
       } else {
 
@@ -251,10 +257,15 @@ public class NodePartitioningComputation
      */
     boolean done = false;
     for (Message m : messages) {
-      ReqstMessage rm = (ReqstMessage) m;
+      // ReqstMessage rm = (ReqstMessage) m;
+      Message rm = m;
       if (done == true) {
-        sendMessage(new LongWritable(rm.getVertexId()),
-            new RequestNotProcessedMessage(this.vertex.getId().get()));
+        /*
+         * sendMessage(new LongWritable(rm.getVertexId()), new
+         * RequestNotProcessedMessage(this.vertex.getId().get()));
+         */
+        sendMessage(new LongWritable(rm.getVertexId()), new Message(this.vertex
+            .getId().get(), Message.RQST_NOT_PRCSS_MESSAGE));
         continue;
       }
       if (verData.outEdges.keySet().size() == 1) {
@@ -263,8 +274,12 @@ public class NodePartitioningComputation
          * ReqeustCancelled message to all the requests.
          */
         for (Message msg : messages) {
-          sendMessage(new LongWritable(msg.getVertexId()),
-              new RequestCancelledMessage(this.vertex.getId().get()));
+          /*
+           * sendMessage(new LongWritable(msg.getVertexId()), new
+           * RequestCancelledMessage(this.vertex.getId().get()));
+           */
+          sendMessage(new LongWritable(msg.getVertexId()), new Message(
+              this.vertex.getId().get(), Message.RQST_CANCL__MESSAGE));
         }
         break;
       } else {
@@ -275,12 +290,16 @@ public class NodePartitioningComputation
                * 1.Update local edge's colour 2.Send Update of the edge color to
                * the reuqetsed vertex
                */
-              int k = rm.requstEdge.color.get();
-              rm.requstEdge.color = verData.outEdges.get(l).details.color;
+              int k = rm.getEdge().color.get();
+              rm.getEdge().color = verData.outEdges.get(l).details.color;
               verData.outEdges.get(l).details.color = new IntWritable(k);
-              sendMessage(new LongWritable(rm.getVertexId()),
-                  new RequestSucceededMessage(this.vertex.getId(),
-                      rm.requstEdge));
+              /*
+               * sendMessage(new LongWritable(rm.getVertexId()), new
+               * RequestSucceededMessage(this.vertex.getId(), rm.requstEdge));
+               */
+              sendMessage(new LongWritable(rm.getVertexId()), new Message(
+                  this.vertex.getId().get(), rm.getEdge(),
+                  Message.RQST_SUCC_MESSAGE));
               done = true;
               break;
             }
@@ -292,8 +311,12 @@ public class NodePartitioningComputation
          * energy by swapping. Process next request.
          */
         if (done == false) {
-          sendMessage(new LongWritable(m.getVertexId()),
-              new RequestNotSucceededMessage(this.vertex.getId().get()));
+          /*
+           * sendMessage(new LongWritable(m.getVertexId()), new
+           * RequestNotSucceededMessage(this.vertex.getId().get()));
+           */
+          sendMessage(new LongWritable(m.getVertexId()), new Message(
+              this.vertex.getId().get(), Message.RQST_NOT_SUCC_MESSAGE));
         }
 
       }
@@ -301,13 +324,13 @@ public class NodePartitioningComputation
     }
   }
 
-  private boolean swapPossible(Long l, ReqstMessage rm) {
+  private boolean swapPossible(Long l, Message rm) {
     int edgeOldEnergy = calculateEnergyOfEdge(l,
         verData.outEdges.get(l).details.color.get());
     int requestOldEnergy = calculateEnergyOfRequest(rm,
-        rm.requstEdge.color.get());
+        rm.getEdge().color.get());
     int totalEneryOld = edgeOldEnergy + requestOldEnergy;
-    int edgeNewEnergy = calculateEnergyOfEdge(l, rm.requstEdge.color.get());
+    int edgeNewEnergy = calculateEnergyOfEdge(l, rm.getEdge().color.get());
     int requestNewEnergy = calculateEnergyOfRequest(rm,
         verData.outEdges.get(l).details.color.get());
     int totalEnergyNew = edgeNewEnergy + requestNewEnergy;
@@ -322,10 +345,10 @@ public class NodePartitioningComputation
    * 
    * @param rm
    */
-  private Integer calculateEnergyOfRequest(ReqstMessage rm, int color) {
+  private Integer calculateEnergyOfRequest(Message rm, int color) {
 
     int energy = 0;
-    for (JabejaEdge je : rm.nghbrs) {
+    for (JabejaEdge je : rm.getNghbrs()) {
       if (color != je.color.get())
         energy++;
     }
@@ -414,10 +437,17 @@ public class NodePartitioningComputation
        */
       neighbrs.addAll(verData.inEdges.values());
 
-      ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
-          verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
-      int myColor = rm.requstEdge.color.get();
+      /*
+       * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+       * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+       */
+      Message rm = new Message(this.vertex.getId().get(),
+          verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
+          Message.RQST_MESSAGE);
+
+      int myColor = rm.getEdge().color.get();
       rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
+
       sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
     }
   }
@@ -429,11 +459,14 @@ public class NodePartitioningComputation
    */
   private void storeFirstMessages(Iterable<Message> messages) {
     for (Message m : messages) {
-      FirstMessage fm = (FirstMessage) m;
+      // FirstMessage fm = (FirstMessage) m;
 
-      this.vertex.getValue().outEdges.get(fm.getVertexId()).neighbours
-          .putAll(fm.getEdges());
-
+      /*
+       * this.vertex.getValue().outEdges.get(fm.getVertexId()).neighbours
+       * .putAll(fm.getEdges());
+       */
+      this.vertex.getValue().outEdges.get(m.getVertexId()).neighbours.putAll(m
+          .getEdges());
     }
   }
 
@@ -449,8 +482,8 @@ public class NodePartitioningComputation
      * Store all the incoming edges
      */
     for (Message m : messages) {
-      ZeroMessage zm = (ZeroMessage) m;
-      JabejaEdge je = zm.getEdge();
+      // ZeroMessage zm = (ZeroMessage) m;
+      JabejaEdge je = m.getEdge();
       this.vertex.getValue().inEdges.put(je.sourceVetex.get(), je);
 
     }
@@ -470,8 +503,8 @@ public class NodePartitioningComputation
           outEdges2.put(e.getKey(), e.getValue());
         }
       }
-      sendMessage(new LongWritable(msg.getVertexId()), new FirstMessage(
-          this.vertex.getId(), outEdges2));
+      sendMessage(new LongWritable(msg.getVertexId()), new Message(this.vertex
+          .getId().get(), outEdges2, Message.FIRST_MESSAGE));
     }
 
   }
@@ -522,15 +555,24 @@ public class NodePartitioningComputation
       this.vertex.getValue().outEdges.put(e.getTargetVertexId().get(),
           new OwnEdge(new JabejaEdge(this.vertex.getId(),
               e.getTargetVertexId(), e.getValue())));
+      /*
+       * sendMessage( e.getTargetVertexId(), new
+       * ZeroMessage(this.vertex.getId(), new JabejaEdge(this.vertex .getId(),
+       * e.getTargetVertexId(), e.getValue())));
+       */
+
       sendMessage(
           e.getTargetVertexId(),
-          new ZeroMessage(this.vertex.getId(), new JabejaEdge(this.vertex
-              .getId(), e.getTargetVertexId(), e.getValue())));
+          new Message(this.vertex.getId().get(), new JabejaEdge(this.vertex
+              .getId(), e.getTargetVertexId(), e.getValue()),
+              Message.ZERO_MESSAGE));
+
     }
   }
 
   private long getMaxNumberOfSuperSteps() {
-    return 2;
+    // return 2;
+    return getConf().getInt("JaBeJa.MaxNumberOfSupersteps", 2);
     /*
      * if (MAX_NUMBER_OF_SUPERSTEPS == null) { MAX_NUMBER_OF_SUPERSTEPS =
      * super.getConf().getInt( "JaBeJa.MaxNumberOfSupersteps",

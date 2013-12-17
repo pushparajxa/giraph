@@ -59,8 +59,7 @@ public class SimpleAggregatorWriter extends
   /**
    * Set filename written to
    * 
-   * @param applicationAttempt
-   *          app attempt
+   * @param applicationAttempt app attempt
    */
   private static void setFilename(long applicationAttempt) {
     FILENAME = "aggregatedValues_" + applicationAttempt;
@@ -70,7 +69,8 @@ public class SimpleAggregatorWriter extends
   public void writeAggregator(Iterable<Entry<String, Writable>> aggregatorMap,
       long superstep) throws IOException {
     for (Entry<String, Writable> entry : aggregatorMap) {
-      Text t = new Text("SuperStep=" + entry.getKey() + ".Energy= ");
+      Text t = new Text("SuperStep=" + entry.getKey().toString() + ".Energy= "
+          + entry.getValue().toString());
       t.write(output);
       entry.getValue().write(output);
     }
