@@ -17,6 +17,11 @@
  */
 package org.apache.giraph.examples.jabeja;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 
 /**
@@ -57,4 +62,22 @@ public class ZeroMessage extends Message {
     this.edge = edge;
   }
 
+  @Override
+  public void readFields(DataInput dataInput) throws IOException {
+    setVertexId(dataInput.readLong());
+    // int typeValue = dataInput.readInt();
+    edge = new JabejaEdge(new LongWritable(dataInput.readLong()),
+        new LongWritable(dataInput.readLong()), new IntWritable(
+            dataInput.readInt()));
+    // readNeighboringColorRatio(dataInput);
+
+  }
+
+  @Override
+  public void write(DataOutput dataOutput) throws IOException {
+    dataOutput.writeLong(getVertexId());
+    dataOutput.writeLong(edge.sourceVetex.get());
+    dataOutput.writeLong(edge.destVertex.get());
+    dataOutput.writeInt(edge.color.get());
+  }
 }

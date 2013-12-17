@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Structure of messages sent between vertices
  */
-public class Message extends BaseWritable {
+public abstract class Message extends BaseWritable {
   /**
    * The neighboring color ratio represents how many neighbors (value) have a
    * specific color (key)
@@ -58,10 +58,8 @@ public class Message extends BaseWritable {
   /**
    * Initializes the message for sending the current vertex color
    * 
-   * @param vertexId
-   *          the id of the vertex sending the message
-   * @param color
-   *          the color of the vertex sending the message
+   * @param vertexId the id of the vertex sending the message
+   * @param color the color of the vertex sending the message
    */
   public Message(long vertexId, int color) {
     this(vertexId);
@@ -73,10 +71,9 @@ public class Message extends BaseWritable {
   /**
    * Initialize the message for sending neighboring color ratios
    * 
-   * @param vertexId
-   *          the id of the vertex sending the message
-   * @param neighboringColorRatio
-   *          the neighboring color ratio of the vertex sending this message
+   * @param vertexId the id of the vertex sending the message
+   * @param neighboringColorRatio the neighboring color ratio of the vertex
+   *          sending this message
    */
   public Message(long vertexId, Map<Integer, Integer> neighboringColorRatio) {
     this(vertexId);
@@ -88,8 +85,7 @@ public class Message extends BaseWritable {
   /**
    * Initialize the message with the source vertex id
    * 
-   * @param vertexId
-   *          the id of the vertex sending the message
+   * @param vertexId the id of the vertex sending the message
    */
   private Message(long vertexId) {
     this.vertexId = vertexId;
@@ -114,7 +110,8 @@ public class Message extends BaseWritable {
   public Map<Integer, Integer> getNeighboringColorRatio() {
     return neighboringColorRatio;
   }
-
+/*
+*
   @Override
   public void readFields(DataInput dataInput) throws IOException {
     this.vertexId = dataInput.readLong();
@@ -139,14 +136,13 @@ public class Message extends BaseWritable {
       writeNeighboringColorRatio(dataOutput);
     }
   }
-
+*/
   /**
    * read the neighboring color ratio map from the dataInput
    * 
-   * @param dataInput
-   *          the input from {@code readFields}
-   * @throws IOException
-   *           the forwarded IOException from {@code dataInput.readX()}
+   * @param dataInput the input from {@code readFields}
+   * @throws IOException the forwarded IOException from
+   *           {@code dataInput.readX()}
    */
   private void readNeighboringColorRatio(DataInput dataInput)
       throws IOException {
@@ -158,10 +154,9 @@ public class Message extends BaseWritable {
   /**
    * write the neighboring color ratio map to the dataOutput
    * 
-   * @param dataOutput
-   *          the output from {@code write}
-   * @throws IOException
-   *           the forwarded IOException from {@code dataOutput.writeX()}
+   * @param dataOutput the output from {@code write}
+   * @throws IOException the forwarded IOException from
+   *           {@code dataOutput.writeX()}
    */
   private void writeNeighboringColorRatio(DataOutput dataOutput)
       throws IOException {
@@ -188,8 +183,7 @@ public class Message extends BaseWritable {
     /**
      * Private constructor of the type with the representing int value
      * 
-     * @param value
-     *          the representing integer value of the enum type
+     * @param value the representing integer value of the enum type
      */
     private Type(int value) {
       this.value = value;
@@ -203,8 +197,7 @@ public class Message extends BaseWritable {
      * Converts the provided integer into the specific type, necessary for
      * parsing this enum
      * 
-     * @param value
-     *          the representing integer value of the enum type
+     * @param value the representing integer value of the enum type
      * @return the actual enum type
      */
     public static Type convertToType(int value) {
