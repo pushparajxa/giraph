@@ -530,11 +530,12 @@ public class NodePartitioningComputation
   }
 
   private long getMaxNumberOfSuperSteps() {
-    if (MAX_NUMBER_OF_SUPERSTEPS == null) {
-      MAX_NUMBER_OF_SUPERSTEPS = super.getConf().getInt(
-          "JaBeJa.MaxNumberOfSupersteps", DEFAULT_MAX_NUMBER_OF_SUPERSTEPS);
-    }
-    return MAX_NUMBER_OF_SUPERSTEPS;
+    return 2;
+    /*
+     * if (MAX_NUMBER_OF_SUPERSTEPS == null) { MAX_NUMBER_OF_SUPERSTEPS =
+     * super.getConf().getInt( "JaBeJa.MaxNumberOfSupersteps",
+     * DEFAULT_MAX_NUMBER_OF_SUPERSTEPS); } return MAX_NUMBER_OF_SUPERSTEPS;
+     */
   }
 
 }
