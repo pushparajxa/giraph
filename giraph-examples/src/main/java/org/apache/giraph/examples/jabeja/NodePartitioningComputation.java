@@ -218,7 +218,7 @@ public class NodePartitioningComputation
           sendMessage(new LongWritable(l),
               new UpdateMessage(this.vertex.getId(), edge));
         }
-        for (JabejaEdge je : verData.outEdges.get(edge.destVertex).neighbours
+        for (JabejaEdge je : verData.outEdges.get(edge.destVertex.get()).neighbours
             .values()) {
           sendMessage(je.sourceVetex, new UpdateMessage(this.vertex.getId(),
               edge));
