@@ -17,6 +17,10 @@
  */
 package org.apache.giraph.examples.jabeja;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 /**
  * Message used to convey that the vertex from whom this message is coming is
  * having only one outWard Edge
@@ -25,6 +29,18 @@ public class RequestCancelledMessage extends Message {
 
   public RequestCancelledMessage(long l) {
     setVertexId(l);
+  }
+
+  @Override
+  public void readFields(DataInput arg0) throws IOException {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void write(DataOutput arg0) throws IOException {
+    // TODO Auto-generated method stub
+
   }
 
 }

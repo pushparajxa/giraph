@@ -17,6 +17,10 @@
  */
 package org.apache.giraph.examples.jabeja;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 /**
  * This message is used to convey that request is not succeeded in lowering the
  * energy by swapping
@@ -25,6 +29,18 @@ public class RequestNotSucceededMessage extends Message {
 
   public RequestNotSucceededMessage(long l) {
     setVertexId(l);
+  }
+
+  @Override
+  public void readFields(DataInput arg0) throws IOException {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void write(DataOutput arg0) throws IOException {
+    // TODO Auto-generated method stub
+
   }
 
 }
