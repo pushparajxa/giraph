@@ -571,8 +571,8 @@ public class NodePartitioningComputation
   }
 
   private long getMaxNumberOfSuperSteps() {
-    // return 2;
-    return getConf().getInt("JaBeJa.MaxNumberOfSupersteps", 2);
+    return 2;
+    // return getConf().getInt("JaBeJa.MaxNumberOfSupersteps", 2);
     /*
      * if (MAX_NUMBER_OF_SUPERSTEPS == null) { MAX_NUMBER_OF_SUPERSTEPS =
      * super.getConf().getInt( "JaBeJa.MaxNumberOfSupersteps",
