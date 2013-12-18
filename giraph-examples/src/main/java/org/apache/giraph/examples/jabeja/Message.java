@@ -57,7 +57,8 @@ public class Message extends BaseWritable {
   private HashMap<Long, JabejaEdge> edges;
   private ArrayList<JabejaEdge> nghbrs;
   private Integer energy;
-  private Text t;
+
+  // private Text t;
 
   /**
    * Default constructor for reflection
@@ -197,8 +198,9 @@ public class Message extends BaseWritable {
   @Override
   public void write(DataOutput dataOutput) throws IOException {
     dataOutput.writeLong(this.vertexId);
-    t = new Text(this.messageType);
-    t.write(dataOutput);
+    // t = new Text(this.messageType);
+    // t.write(dataOutput);
+    Text.writeString(dataOutput, messageType);
 
     if (messageType.equals(FIRST_MESSAGE)) {
       // Write the Map edges<Long,JabegaEdge>.1)Write the size 2) Then
