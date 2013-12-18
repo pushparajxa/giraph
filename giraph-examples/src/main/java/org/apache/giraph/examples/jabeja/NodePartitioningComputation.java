@@ -28,6 +28,7 @@ import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.log4j.Logger;
 
 /**
  * Implement the original JaBeJa-Algorithm
@@ -41,7 +42,8 @@ public class NodePartitioningComputation
    * provided.
    */
   // private static final int DEFAULT_NUMBER_OF_COLORS = 2;
-
+  private static final Logger LOG = Logger
+      .getLogger(NodePartitioningComputation.class);
   /**
    * The currently processed vertex
    */
@@ -403,8 +405,10 @@ public class NodePartitioningComputation
        * Announce colour of the outgoing edges
        */
       announceColor();
+      LOG.trace("Successfully announec the color");
     } else if (getSuperstep() == 1) {
       storeZeroMessages(messages);
+      LOG.trace("Successfully stored zero messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
       // Send Request to swap.
@@ -571,8 +575,8 @@ public class NodePartitioningComputation
   }
 
   private long getMaxNumberOfSuperSteps() {
-    return 2;
-    // return getConf().getInt("JaBeJa.MaxNumberOfSupersteps", 2);
+    // return 2;
+    return getConf().getInt("JaBeJa.MaxNumberOfSupersteps", 2);
     /*
      * if (MAX_NUMBER_OF_SUPERSTEPS == null) { MAX_NUMBER_OF_SUPERSTEPS =
      * super.getConf().getInt( "JaBeJa.MaxNumberOfSupersteps",
