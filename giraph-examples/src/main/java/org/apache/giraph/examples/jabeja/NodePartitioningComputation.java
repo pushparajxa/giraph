@@ -67,6 +67,11 @@ public class NodePartitioningComputation
     this.vertex = vertex;
     this.verData = this.vertex.getValue();
 
+    if (isTimeToStop()) {
+      this.vertex.voteToHalt();
+      return;
+    }
+
     if (super.getSuperstep() < 3) {
       initializeGraph(messages);
     } else {
@@ -89,10 +94,6 @@ public class NodePartitioningComputation
      * calculateEnergy()); }
      */
 
-    if (isTimeToStop()) {
-      this.vertex.voteToHalt();
-      return;
-    }
   }
 
   /**
