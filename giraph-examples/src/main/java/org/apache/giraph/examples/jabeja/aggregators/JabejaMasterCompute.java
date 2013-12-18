@@ -17,7 +17,7 @@
  */
 package org.apache.giraph.examples.jabeja.aggregators;
 
-import org.apache.giraph.aggregators.DoubleSumAggregator;
+import org.apache.giraph.aggregators.IntSumAggregator;
 import org.apache.giraph.master.DefaultMasterCompute;
 
 /**
@@ -38,6 +38,6 @@ public class JabejaMasterCompute extends DefaultMasterCompute {
   @Override
   public void initialize() throws InstantiationException,
       IllegalAccessException {
-    registerAggregator(ENEREGY, DoubleSumAggregator.class);
+    registerAggregator(ENEREGY, IntSumAggregator.class);
   }
 }
