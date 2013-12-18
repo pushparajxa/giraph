@@ -91,6 +91,7 @@ public class NodePartitioningComputation
 
     if (isTimeToStop()) {
       this.vertex.voteToHalt();
+      return;
     }
   }
 
