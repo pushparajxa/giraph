@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.giraph.edge.Edge;
-import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.IntWritable;
@@ -85,9 +84,10 @@ public class NodePartitioningComputation
      * Calculate energies After sending the Request to swap messages and before
      * receiving the Request Messages.
      */
-    if (getSuperstep() % 3 == 2) {
-      aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
-    }
+    /*
+     * if (getSuperstep() % 3 == 2) { aggregate(JabejaMasterCompute.ENEREGY,
+     * calculateEnergy()); }
+     */
 
     if (isTimeToStop()) {
       this.vertex.voteToHalt();
