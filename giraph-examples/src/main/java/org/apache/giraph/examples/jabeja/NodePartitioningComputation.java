@@ -51,7 +51,7 @@ public class NodePartitioningComputation
   /**
    * This edge is locked and sent in Request to swap
    */
-  private Long lockedEdgeTargetVertex;
+  private Long lockedEdgeTargetVertex = null;
   /**
    * Index pointing to the next edge to be locked
    */
