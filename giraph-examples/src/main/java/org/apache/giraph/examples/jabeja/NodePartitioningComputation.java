@@ -447,7 +447,8 @@ public class NodePartitioningComputation
       } else {
         lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
         lockEdgeIndex++;
-
+        System.out.println("Locked Edge is "
+            + lockedEdgeTargetVertex.longValue());
         /**
          * Until Random vertex getter functionality implemented lets send it to
          * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
