@@ -26,13 +26,21 @@ import java.io.IOException;
  */
 public class NodePartitioningVertexData extends VertexData {
   /**
+   * This edge is locked and sent in Request to swap
+   */
+  private Long lockedEdgeTargetVertex = null;
+  /**
+   * Index pointing to the next edge to be locked
+   */
+  private int lockEdgeIndex = 0;
+  /**
    * The color of the current node
    */
   private int nodeColor;
 
   /**
-   * Flag, which indicates if the color has changed since it has been reset
-   * the last time
+   * Flag, which indicates if the color has changed since it has been reset the
+   * last time
    */
   private boolean hasColorChanged;
 
@@ -48,9 +56,9 @@ public class NodePartitioningVertexData extends VertexData {
   }
 
   /**
-   * Sets the new node color and checks if it has changed,
-   * in that case it also sets the flag {@code hasColorChanged}
-   *
+   * Sets the new node color and checks if it has changed, in that case it also
+   * sets the flag {@code hasColorChanged}
+   * 
    * @param nodeColor the new color of the current vertex
    */
   public void setNodeColor(int nodeColor) {
@@ -63,21 +71,21 @@ public class NodePartitioningVertexData extends VertexData {
   /**
    * Calculates the energy of the node according to <code>the number of
    * neighbors - the number of neighbors in the same color</code>
-   *
+   * 
    * @return the energy of the current node (how many neighbors are of a
-   * different color)
+   *         different color)
    */
   public int getNodeEnergy() {
-    return super.getNumberOfNeighbors() -
-           getNumberOfNeighborsWithCurrentColor();
+    return super.getNumberOfNeighbors()
+        - getNumberOfNeighborsWithCurrentColor();
   }
 
   /**
    * Simply calls <code>getNumberOfNeighbors</code> with the parameter of the
    * current color.
-   *
+   * 
    * @return the number of neighbors which have the same color as the current
-   * node.
+   *         node.
    */
   public int getNumberOfNeighborsWithCurrentColor() {
     return super.getNumberOfNeighbors(getNodeColor());
@@ -111,5 +119,21 @@ public class NodePartitioningVertexData extends VertexData {
    */
   public void resetHasColorChanged() {
     this.hasColorChanged = false;
+  }
+
+  public Long getLockedEdgeTargetVertex() {
+    return lockedEdgeTargetVertex;
+  }
+
+  public void setLockedEdgeTargetVertex(Long lockedEdgeTargetVertex) {
+    this.lockedEdgeTargetVertex = lockedEdgeTargetVertex;
+  }
+
+  public int getLockEdgeIndex() {
+    return lockEdgeIndex;
+  }
+
+  public void setLockEdgeIndex(int lockEdgeIndex) {
+    this.lockEdgeIndex = lockEdgeIndex;
   }
 }

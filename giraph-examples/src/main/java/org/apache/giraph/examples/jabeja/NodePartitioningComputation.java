@@ -48,14 +48,7 @@ public class NodePartitioningComputation
    * The currently processed vertex
    */
   private Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex;
-  /**
-   * This edge is locked and sent in Request to swap
-   */
-  private Long lockedEdgeTargetVertex = null;
-  /**
-   * Index pointing to the next edge to be locked
-   */
-  private int lockEdgeIndex = 0;
+
   /**
    * Variable storing this vertex data.
    */
@@ -157,12 +150,14 @@ public class NodePartitioningComputation
     ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
 
     if (al.size() == 0) {
-      lockedEdgeTargetVertex = null;
+      this.verData.setLockedEdgeTargetVertex(null);
 // don't send request messages since you do not have any outward edges.
     } else {
-
-      lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
-      lockEdgeIndex++;
+      this.verData.setLockedEdgeTargetVertex(al.get(this.verData
+          .getLockEdgeIndex() % al.size()));
+      this.verData.setLockEdgeIndex(this.verData.getLockEdgeIndex() + 1);
+      System.out.println("Locked Edge is "
+          + this.verData.getLockedEdgeTargetVertex().longValue());
       /**
        * Until Random vertex getter functionality implemented lets send it to
        * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
@@ -171,13 +166,15 @@ public class NodePartitioningComputation
        */
 
       ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-          verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+          verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).neighbours
+              .values());
 
       /*
        * Add the outEdges of this vertex
        */
       for (Long l : verData.outEdges.keySet()) {
-        if (l.longValue() != lockedEdgeTargetVertex.longValue())
+        if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
+            .longValue())
           neighbrs.add(verData.outEdges.get(l).details);
       }
       /*
@@ -193,12 +190,14 @@ public class NodePartitioningComputation
        * LongWritable(lockedEdgeTargetVertex), rm);
        */
 
-      Message rm = new Message(this.vertex.getId().get(),
-          verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
-          Message.RQST_MESSAGE);
+      Message rm = new Message(
+          this.vertex.getId().get(),
+          verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).details,
+          neighbrs, 0, Message.RQST_MESSAGE);
       int myColor = rm.getEdge().color.get();
       rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-      sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
+      sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+          rm);
 
     }
   }
@@ -302,11 +301,12 @@ public class NodePartitioningComputation
         continue;
       } else {
         for (Long l : verData.outEdges.keySet()) {
-          if (lockedEdgeTargetVertex == null) {
+          if (this.verData.getLockedEdgeTargetVertex() == null) {
             System.out.println("LockedEdge Vertex is null.");
             LOG.log(Level.INFO, "LockedEdge Vertex is null.");
           } else {
-            if (l.longValue() != lockedEdgeTargetVertex.longValue()) {
+            if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
+                .longValue()) {
               if (swapPossible(l, rm)) {
                 /*
                  * 1.Update local edge's colour 2.Send Update of the edge color
@@ -397,7 +397,7 @@ public class NodePartitioningComputation
      * and the lockedEdge which is sent as a request for swapping
      */
     for (Long l : verData.outEdges.keySet()) {
-      if (l.longValue() != lockedEdgeTargetVertex.longValue()
+      if (l.longValue() != this.verData.getLockedEdgeTargetVertex().longValue()
           && l.longValue() != lg.longValue())
         edges.add(verData.outEdges.get(l).details);
     }
@@ -442,13 +442,14 @@ public class NodePartitioningComputation
        */
       ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
       if (al.size() == 0) {
-        lockedEdgeTargetVertex = null;
+        this.verData.setLockedEdgeTargetVertex(null);
 // don't send request messages since you do not have any outward edges.
       } else {
-        lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
-        lockEdgeIndex++;
+        this.verData.setLockedEdgeTargetVertex(al.get(this.verData
+            .getLockEdgeIndex() % al.size()));
+        this.verData.setLockEdgeIndex(this.verData.getLockEdgeIndex() + 1);
         System.out.println("Locked Edge is "
-            + lockedEdgeTargetVertex.longValue());
+            + this.verData.getLockedEdgeTargetVertex().longValue());
         /**
          * Until Random vertex getter functionality implemented lets send it to
          * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
@@ -457,13 +458,15 @@ public class NodePartitioningComputation
          */
 
         ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-            verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+            verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).neighbours
+                .values());
 
         /*
          * Add the outEdges of this vertex
          */
         for (Long l : verData.outEdges.keySet()) {
-          if (l.longValue() != lockedEdgeTargetVertex.longValue())
+          if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
+              .longValue())
             neighbrs.add(verData.outEdges.get(l).details);
         }
         /*
@@ -475,14 +478,16 @@ public class NodePartitioningComputation
          * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
          * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
          */
-        Message rm = new Message(this.vertex.getId().get(),
-            verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
-            Message.RQST_MESSAGE);
+        Message rm = new Message(
+            this.vertex.getId().get(),
+            verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).details,
+            neighbrs, 0, Message.RQST_MESSAGE);
 
         int myColor = rm.getEdge().color.get();
         rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
 
-        sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
+        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+            rm);
       }
     }
   }
