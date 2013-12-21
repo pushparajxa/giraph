@@ -305,25 +305,26 @@ public class NodePartitioningComputation
           if (lockedEdgeTargetVertex == null) {
             System.out.println("LockedEdge Vertex is null.");
             LOG.log(Level.INFO, "LockedEdge Vertex is null.");
-          }
-          if (l.longValue() != lockedEdgeTargetVertex.longValue()) {
-            if (swapPossible(l, rm)) {
-              /*
-               * 1.Update local edge's colour 2.Send Update of the edge color to
-               * the reuqetsed vertex
-               */
-              int k = rm.getEdge().color.get();
-              rm.getEdge().color = verData.outEdges.get(l).details.color;
-              verData.outEdges.get(l).details.color = new IntWritable(k);
-              /*
-               * sendMessage(new LongWritable(rm.getVertexId()), new
-               * RequestSucceededMessage(this.vertex.getId(), rm.requstEdge));
-               */
-              sendMessage(new LongWritable(rm.getVertexId()), new Message(
-                  this.vertex.getId().get(), rm.getEdge(),
-                  Message.RQST_SUCC_MESSAGE));
-              done = true;
-              break;
+          } else {
+            if (l.longValue() != lockedEdgeTargetVertex.longValue()) {
+              if (swapPossible(l, rm)) {
+                /*
+                 * 1.Update local edge's colour 2.Send Update of the edge color
+                 * to the reuqetsed vertex
+                 */
+                int k = rm.getEdge().color.get();
+                rm.getEdge().color = verData.outEdges.get(l).details.color;
+                verData.outEdges.get(l).details.color = new IntWritable(k);
+                /*
+                 * sendMessage(new LongWritable(rm.getVertexId()), new
+                 * RequestSucceededMessage(this.vertex.getId(), rm.requstEdge));
+                 */
+                sendMessage(new LongWritable(rm.getVertexId()), new Message(
+                    this.vertex.getId().get(), rm.getEdge(),
+                    Message.RQST_SUCC_MESSAGE));
+                done = true;
+                break;
+              }
             }
           }
 
