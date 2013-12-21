@@ -272,7 +272,8 @@ public class NodePartitioningComputation
             .getId().get(), Message.RQST_NOT_PRCSS_MESSAGE));
         continue;
       }
-      if (verData.outEdges.keySet().size() == 1) {
+      if (verData.outEdges.keySet().size() == 1
+          || verData.outEdges.keySet().size() == 0) {
         /*
          * Only one outgoing edge and that one is locked so send
          * ReqeustCancelled message to all the requests.
