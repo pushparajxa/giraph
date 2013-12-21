@@ -420,41 +420,48 @@ public class NodePartitioningComputation
        * information] about the locked one in above.
        */
       ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
-      lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
-      /**
-       * Until Random vertex getter functionality implemented lets send it to
-       * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
-       * the neighbouring edges of this edge.And the sourceVertexId, that is the
-       * request sending vertex's id.
-       */
+      if (al.size() == 0) {
+        lockedEdgeTargetVertex = null;
+// don't send request messages since you do not have any outward edges.
+      } else {
+        lockedEdgeTargetVertex = al.get(lockEdgeIndex % al.size());
+        lockEdgeIndex++;
 
-      ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-          verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+        /**
+         * Until Random vertex getter functionality implemented lets send it to
+         * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
+         * the neighbouring edges of this edge.And the sourceVertexId, that is
+         * the request sending vertex's id.
+         */
 
-      /*
-       * Add the outEdges of this vertex
-       */
-      for (Long l : verData.outEdges.keySet()) {
-        if (l.longValue() != lockedEdgeTargetVertex.longValue())
-          neighbrs.add(verData.outEdges.get(l).details);
+        ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
+            verData.outEdges.get(lockedEdgeTargetVertex).neighbours.values());
+
+        /*
+         * Add the outEdges of this vertex
+         */
+        for (Long l : verData.outEdges.keySet()) {
+          if (l.longValue() != lockedEdgeTargetVertex.longValue())
+            neighbrs.add(verData.outEdges.get(l).details);
+        }
+        /*
+         * Adds the incoming edges at this vertex.
+         */
+        neighbrs.addAll(verData.inEdges.values());
+
+        /*
+         * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+         * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+         */
+        Message rm = new Message(this.vertex.getId().get(),
+            verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
+            Message.RQST_MESSAGE);
+
+        int myColor = rm.getEdge().color.get();
+        rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
+
+        sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
       }
-      /*
-       * Adds the incoming edges at this vertex.
-       */
-      neighbrs.addAll(verData.inEdges.values());
-
-      /*
-       * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
-       * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
-       */
-      Message rm = new Message(this.vertex.getId().get(),
-          verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs, 0,
-          Message.RQST_MESSAGE);
-
-      int myColor = rm.getEdge().color.get();
-      rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-
-      sendMessage(new LongWritable(lockedEdgeTargetVertex), rm);
     }
   }
 
@@ -546,7 +553,7 @@ public class NodePartitioningComputation
    *         maximum allowed number
    */
   private boolean isTimeToStop() {
-    return getSuperstep() > getMaxNumberOfSuperSteps();
+    return getSuperstep() >= getMaxNumberOfSuperSteps();
   }
 
   /**
