@@ -27,6 +27,7 @@ import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -269,6 +270,24 @@ public class NodePartitioningComputation
      * lockedEdgeTargetVertex) energies.put(l, calculateEnergyOfEdge(l,
      * verData.outEdges.get(l))); }
      */
+
+    if (verData.outEdges.keySet().size() == 1
+        || verData.outEdges.keySet().size() == 0) {
+      /*
+       * Only one outgoing edge and that one is locked so send ReqeustCancelled
+       * message to all the requests.
+       */
+      for (Message msg : messages) {
+        /*
+         * sendMessage(new LongWritable(msg.getVertexId()), new
+         * RequestCancelledMessage(this.vertex.getId().get()));
+         */
+        sendMessage(new LongWritable(msg.getVertexId()), new Message(
+            this.vertex.getId().get(), Message.RQST_CANCL__MESSAGE));
+      }
+      return;
+    }
+
     boolean done = false;
     for (Message m : messages) {
       // ReqstMessage rm = (ReqstMessage) m;
@@ -281,24 +300,12 @@ public class NodePartitioningComputation
         sendMessage(new LongWritable(rm.getVertexId()), new Message(this.vertex
             .getId().get(), Message.RQST_NOT_PRCSS_MESSAGE));
         continue;
-      }
-      if (verData.outEdges.keySet().size() == 1
-          || verData.outEdges.keySet().size() == 0) {
-        /*
-         * Only one outgoing edge and that one is locked so send
-         * ReqeustCancelled message to all the requests.
-         */
-        for (Message msg : messages) {
-          /*
-           * sendMessage(new LongWritable(msg.getVertexId()), new
-           * RequestCancelledMessage(this.vertex.getId().get()));
-           */
-          sendMessage(new LongWritable(msg.getVertexId()), new Message(
-              this.vertex.getId().get(), Message.RQST_CANCL__MESSAGE));
-        }
-        break;
       } else {
         for (Long l : verData.outEdges.keySet()) {
+          if (lockedEdgeTargetVertex == null) {
+            System.out.println("LockedEdge Vertex is null.");
+            LOG.log(Level.INFO, "LockedEdge Vertex is null.");
+          }
           if (l.longValue() != lockedEdgeTargetVertex.longValue()) {
             if (swapPossible(l, rm)) {
               /*
@@ -418,10 +425,12 @@ public class NodePartitioningComputation
        * Announce colour of the outgoing edges
        */
       announceColor();
-      LOG.trace("Successfully announec the color");
+      // LOG.trace("Successfully announec the color");
+      LOG.log(Level.INFO, "Successfully announecd the color");
     } else if (getSuperstep() == 1) {
       storeZeroMessages(messages);
-      LOG.trace("Successfully stored zero messages");
+      // LOG.trace("Successfully stored zero messages");
+      LOG.log(Level.INFO, "Successfully stored Zero Messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
       // Send Request to swap.
