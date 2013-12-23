@@ -203,7 +203,7 @@ public class NodePartitioningComputation
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
         long vid = this.vertex.getId().get(), dest;
         do {
-          dest = (Math.abs(this.verData.getRandVertexGen().nextLong()))
+          dest = (Math.abs((long) (this.verData.getRandVertexGen().nextLong())))
               % (getConf().getLong(
                   PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
         } while (dest == vid);
