@@ -21,13 +21,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
-import org.apache.giraph.io.formats.PseudoRandomInputFormatConstants;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.log4j.Level;
@@ -114,7 +112,7 @@ public class NodePartitioningComputation
    * @param messages
    */
   private void processUpdateMessages(Iterable<Message> messages) {
-    Random r = new Random(this.vertex.getId().get());
+    // Random r = new Random(this.vertex.getId().get());
     for (Message msg : messages) {
       // UpdateMessage upm = (UpdateMessage) msg;
       JabejaEdge je = msg.getEdge();
@@ -454,7 +452,7 @@ public class NodePartitioningComputation
       LOG.log(Level.INFO, "Successfully stored Zero Messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
-      Random r = new Random(this.vertex.getId().get());
+      // Random r = new Random(this.vertex.getId().get());
       // Send Request to swap.
       /**
        * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
