@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
@@ -203,7 +204,8 @@ public class NodePartitioningComputation
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
-          tmp = this.verData.getRandVertexGen().nextLong();
+          // tmp = this.verData.getRandVertexGen().nextLong();
+          tmp = (new Random(vid)).nextLong();
           if (tmp < 0) {
             tmp = -tmp;
           }
@@ -509,7 +511,8 @@ public class NodePartitioningComputation
         if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
-            tmp = this.verData.getRandVertexGen().nextLong();
+            // tmp = this.verData.getRandVertexGen().nextLong();
+            tmp = (new Random(vid)).nextLong();
             if (tmp < 0) {
               tmp = -tmp;
             }
