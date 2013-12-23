@@ -477,7 +477,7 @@ public class NodePartitioningComputation
         this.verData.setLockedEdgeTargetVertex(al.get(this.verData
             .getLockEdgeIndex() % al.size()));
         this.verData.setLockEdgeIndex(this.verData.getLockEdgeIndex() + 1);
-        System.out.println("Locked Edge is "
+        System.out.println("Locked Edge's Target Vertex= "
             + this.verData.getLockedEdgeTargetVertex().longValue());
         /**
          * Until Random vertex getter functionality implemented lets send it to
