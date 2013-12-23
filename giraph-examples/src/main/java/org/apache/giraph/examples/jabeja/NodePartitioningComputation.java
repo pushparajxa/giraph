@@ -201,9 +201,10 @@ public class NodePartitioningComputation
 
       if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
-        long vid = this.vertex.getId().get(), dest;
+        long vid = this.vertex.getId().get(), dest, tmp;
         do {
-          dest = (Math.abs((long) (this.verData.getRandVertexGen().nextLong())))
+          tmp = this.verData.getRandVertexGen().nextLong();
+          dest = (Math.abs(tmp))
               % (getConf().getLong(
                   PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
         } while (dest == vid);
@@ -503,9 +504,10 @@ public class NodePartitioningComputation
         int myColor = rm.getEdge().color.get();
         rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
         if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
-          long vid = this.vertex.getId().get(), dest;
+          long vid = this.vertex.getId().get(), dest, tmp;
           do {
-            dest = (Math.abs(this.verData.getRandVertexGen().nextLong()))
+            tmp = this.verData.getRandVertexGen().nextLong();
+            dest = (Math.abs(tmp))
                 % (getConf().getLong(
                     PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
           } while (dest == vid);
