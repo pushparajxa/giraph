@@ -54,7 +54,7 @@ public class NodePartitioningComputation
   /**
    * Store random vertex givers
    */
-  private HashMap<Long, Random> rnds = new HashMap<Long, Random>();
+  private static HashMap<Long, Random> rnds = new HashMap<Long, Random>();
   /**
    * Variable storing this vertex data.
    */
@@ -66,9 +66,9 @@ public class NodePartitioningComputation
       Iterable<Message> messages) throws IOException {
     this.vertex = vertex;
     this.verData = this.vertex.getValue();
-    if (!(this.rnds.containsKey(Long.valueOf(vertex.getId().get())))) {
-      this.rnds.put(Long.valueOf(vertex.getId().get()), new Random(vertex
-          .getId().get()));
+    if (!(rnds.containsKey(Long.valueOf(vertex.getId().get())))) {
+      rnds.put(Long.valueOf(vertex.getId().get()), new Random(vertex.getId()
+          .get()));
     }
     System.out.println("The size of rands table is= " + rnds.size());
 
@@ -213,7 +213,7 @@ public class NodePartitioningComputation
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
-          tmp = this.rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
+          tmp = rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
           // tmp = r.nextLong();
           if (tmp < 0) {
             tmp = -tmp;
@@ -526,7 +526,7 @@ public class NodePartitioningComputation
         if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
-            tmp = this.rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
+            tmp = rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
             // tmp = (new Random(vid)).nextLong();
             // tmp = r.nextLong();
             if (tmp < 0) {
