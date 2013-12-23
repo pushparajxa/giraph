@@ -114,6 +114,7 @@ public class NodePartitioningComputation
    * @param messages
    */
   private void processUpdateMessages(Iterable<Message> messages) {
+    Random r = new Random(this.vertex.getId().get());
     for (Message msg : messages) {
       // UpdateMessage upm = (UpdateMessage) msg;
       JabejaEdge je = msg.getEdge();
@@ -205,7 +206,8 @@ public class NodePartitioningComputation
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
           // tmp = this.verData.getRandVertexGen().nextLong();
-          tmp = (new Random(vid)).nextLong();
+
+          tmp = r.nextLong();
           if (tmp < 0) {
             tmp = -tmp;
           }
@@ -456,6 +458,7 @@ public class NodePartitioningComputation
       LOG.log(Level.INFO, "Successfully stored Zero Messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
+      Random r = new Random(this.vertex.getId().get());
       // Send Request to swap.
       /**
        * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
@@ -512,7 +515,8 @@ public class NodePartitioningComputation
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
             // tmp = this.verData.getRandVertexGen().nextLong();
-            tmp = (new Random(vid)).nextLong();
+            // tmp = (new Random(vid)).nextLong();
+            tmp = r.nextLong();
             if (tmp < 0) {
               tmp = -tmp;
             }
