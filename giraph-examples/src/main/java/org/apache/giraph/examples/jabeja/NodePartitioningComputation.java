@@ -70,6 +70,7 @@ public class NodePartitioningComputation
       this.rnds.put(Long.valueOf(vertex.getId().get()), new Random(vertex
           .getId().get()));
     }
+    System.out.println("The size of rands table is= " + rnds.size());
 
     if (isTimeToStop()) {
       this.vertex.voteToHalt();
