@@ -67,8 +67,8 @@ public class NodePartitioningComputation
     this.vertex = vertex;
     this.verData = this.vertex.getValue();
     if (!(this.rnds.containsKey(Long.valueOf(vertex.getId().get())))) {
-      this.rnds.put(new Long(vertex.getId().get()), new Random(vertex.getId()
-          .get()));
+      this.rnds.put(Long.valueOf(vertex.getId().get()), new Random(vertex
+          .getId().get()));
     }
 
     if (isTimeToStop()) {
