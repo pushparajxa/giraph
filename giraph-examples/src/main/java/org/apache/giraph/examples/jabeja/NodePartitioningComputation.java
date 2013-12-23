@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
@@ -50,7 +51,10 @@ public class NodePartitioningComputation
    * The currently processed vertex
    */
   private Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex;
-
+  /**
+   * Store random vertex givers
+   */
+  private HashMap<Long, Random> rnds = new HashMap<Long, Random>();
   /**
    * Variable storing this vertex data.
    */
@@ -62,6 +66,10 @@ public class NodePartitioningComputation
       Iterable<Message> messages) throws IOException {
     this.vertex = vertex;
     this.verData = this.vertex.getValue();
+    if (!(this.rnds.containsKey(new Long(vertex.getId().get())))) {
+      this.rnds.put(new Long(vertex.getId().get()), new Random(vertex.getId()
+          .get()));
+    }
 
     if (isTimeToStop()) {
       this.vertex.voteToHalt();
@@ -204,7 +212,7 @@ public class NodePartitioningComputation
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
-          tmp = this.verData.getRandVertexGen().nextLong();
+          tmp = this.rnds.get(new Long(vertex.getId().get())).nextLong();
           // tmp = r.nextLong();
           if (tmp < 0) {
             tmp = -tmp;
@@ -517,7 +525,7 @@ public class NodePartitioningComputation
         if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
-            tmp = this.verData.getRandVertexGen().nextLong();
+            tmp = this.rnds.get(new Long(vertex.getId().get())).nextLong();
             // tmp = (new Random(vid)).nextLong();
             // tmp = r.nextLong();
             if (tmp < 0) {
