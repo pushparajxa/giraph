@@ -201,28 +201,24 @@ public class NodePartitioningComputation
       int myColor = rm.getEdge().color.get();
       rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
 
-      if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
-        System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
-        long vid = this.vertex.getId().get(), dest, tmp;
-        do {
-          // tmp = this.verData.getRandVertexGen().nextLong();
-
-          tmp = r.nextLong();
-          if (tmp < 0) {
-            tmp = -tmp;
-          }
-          dest = tmp
-              % (getConf().getLong(
-                  PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
-        } while (dest == vid);
-
-        sendMessage(new LongWritable(dest), rm);
-      } else {
-        System.out.println("JaBeJa.SendRequestToRandomVertex is set false");
-        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
-            rm);
-      }
-
+      /*
+       * if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
+       * System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
+       * long vid = this.vertex.getId().get(), dest, tmp; do { // tmp =
+       * this.verData.getRandVertexGen().nextLong();
+       * 
+       * tmp = r.nextLong(); if (tmp < 0) { tmp = -tmp; } dest = tmp %
+       * (getConf().getLong(
+       * PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10)); } while
+       * (dest == vid);
+       * 
+       * sendMessage(new LongWritable(dest), rm); } else {
+       * System.out.println("JaBeJa.SendRequestToRandomVertex is set false");
+       * sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+       * rm); }
+       */
+      sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+          rm);
     }
   }
 
@@ -511,26 +507,20 @@ public class NodePartitioningComputation
 
         int myColor = rm.getEdge().color.get();
         rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-        if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
-          long vid = this.vertex.getId().get(), dest, tmp;
-          do {
-            // tmp = this.verData.getRandVertexGen().nextLong();
-            // tmp = (new Random(vid)).nextLong();
-            tmp = r.nextLong();
-            if (tmp < 0) {
-              tmp = -tmp;
-            }
-            dest = tmp
-                % (getConf().getLong(
-                    PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
-          } while (dest == vid);
-
-          sendMessage(new LongWritable(dest), rm);
-        } else {
-          sendMessage(
-              new LongWritable(this.verData.getLockedEdgeTargetVertex()), rm);
-        }
-
+        /*
+         * if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false))
+         * { long vid = this.vertex.getId().get(), dest, tmp; do { // tmp =
+         * this.verData.getRandVertexGen().nextLong(); // tmp = (new
+         * Random(vid)).nextLong(); tmp = r.nextLong(); if (tmp < 0) { tmp =
+         * -tmp; } dest = tmp % (getConf().getLong(
+         * PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10)); } while
+         * (dest == vid);
+         * 
+         * sendMessage(new LongWritable(dest), rm); } else { sendMessage( new
+         * LongWritable(this.verData.getLockedEdgeTargetVertex()), rm); }
+         */
+        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+            rm);
       }
     }
   }
