@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
@@ -114,7 +113,7 @@ public class NodePartitioningComputation
    * @param messages
    */
   private void processUpdateMessages(Iterable<Message> messages) {
-    Random r = new Random(this.vertex.getId().get());
+    // Random r = new Random(this.vertex.getId().get());
     for (Message msg : messages) {
       // UpdateMessage upm = (UpdateMessage) msg;
       JabejaEdge je = msg.getEdge();
@@ -205,8 +204,8 @@ public class NodePartitioningComputation
         System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
-          // tmp = this.verData.getRandVertexGen().nextLong();
-          tmp = r.nextLong();
+          tmp = this.verData.getRandVertexGen().nextLong();
+          // tmp = r.nextLong();
           if (tmp < 0) {
             tmp = -tmp;
           }
@@ -461,7 +460,7 @@ public class NodePartitioningComputation
       LOG.log(Level.INFO, "Successfully stored Zero Messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
-      Random r = new Random(this.vertex.getId().get());
+
       // Send Request to swap.
       /**
        * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
@@ -518,9 +517,9 @@ public class NodePartitioningComputation
         if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
-            // tmp = this.verData.getRandVertexGen().nextLong();
+            tmp = this.verData.getRandVertexGen().nextLong();
             // tmp = (new Random(vid)).nextLong();
-            tmp = r.nextLong();
+            // tmp = r.nextLong();
             if (tmp < 0) {
               tmp = -tmp;
             }
