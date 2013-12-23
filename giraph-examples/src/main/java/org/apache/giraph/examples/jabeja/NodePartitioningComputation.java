@@ -204,7 +204,10 @@ public class NodePartitioningComputation
         long vid = this.vertex.getId().get(), dest, tmp;
         do {
           tmp = this.verData.getRandVertexGen().nextLong();
-          dest = (Math.abs(tmp))
+          if (tmp < 0) {
+            tmp = -tmp;
+          }
+          dest = tmp
               % (getConf().getLong(
                   PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
         } while (dest == vid);
@@ -507,7 +510,10 @@ public class NodePartitioningComputation
           long vid = this.vertex.getId().get(), dest, tmp;
           do {
             tmp = this.verData.getRandVertexGen().nextLong();
-            dest = (Math.abs(tmp))
+            if (tmp < 0) {
+              tmp = -tmp;
+            }
+            dest = tmp
                 % (getConf().getLong(
                     PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
           } while (dest == vid);
