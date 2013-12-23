@@ -53,7 +53,7 @@ public class NodePartitioningVertexData extends VertexData {
    * 
    * @param vertexId
    */
-  public NodePartitioningVertexData(long vertexId) {
+  public NodePartitioningVertexData() {
     super();
     // randVertexGen = new Random(vertexId);
   }
