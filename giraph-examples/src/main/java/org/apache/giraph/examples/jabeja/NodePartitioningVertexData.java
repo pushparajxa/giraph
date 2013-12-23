@@ -20,11 +20,16 @@ package org.apache.giraph.examples.jabeja;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Vertex data for the NodePartitioning solution.
  */
 public class NodePartitioningVertexData extends VertexData {
+  /**
+   * Random generator to give the random vertices.
+   */
+  private Random randVertexGen;
   /**
    * This edge is locked and sent in Request to swap
    */
@@ -46,9 +51,12 @@ public class NodePartitioningVertexData extends VertexData {
 
   /**
    * Default constructor for reflection
+   * 
+   * @param vertexId
    */
-  public NodePartitioningVertexData() {
+  public NodePartitioningVertexData(long vertexId) {
     super();
+    randVertexGen = new Random(vertexId);
   }
 
   public int getNodeColor() {
@@ -135,5 +143,13 @@ public class NodePartitioningVertexData extends VertexData {
 
   public void setLockEdgeIndex(int lockEdgeIndex) {
     this.lockEdgeIndex = lockEdgeIndex;
+  }
+
+  public Random getRandVertexGen() {
+    return randVertexGen;
+  }
+
+  public void setRandVertexGen(Random randVertexGen) {
+    this.randVertexGen = randVertexGen;
   }
 }

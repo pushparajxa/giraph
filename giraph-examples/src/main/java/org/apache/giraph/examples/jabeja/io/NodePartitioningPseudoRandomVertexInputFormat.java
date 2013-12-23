@@ -38,7 +38,7 @@ public class NodePartitioningPseudoRandomVertexInputFormat extends
 
   @Override
   protected NodePartitioningVertexData getVertexValue(long vertexId) {
-    return new NodePartitioningVertexData();
+    return new NodePartitioningVertexData(vertexId);
   }
 
   @Override

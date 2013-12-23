@@ -26,6 +26,7 @@ import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
+import org.apache.giraph.io.formats.PseudoRandomInputFormatConstants;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.log4j.Level;
@@ -197,8 +198,22 @@ public class NodePartitioningComputation
           neighbrs, 0, Message.RQST_MESSAGE);
       int myColor = rm.getEdge().color.get();
       rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-      sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
-          rm);
+
+      if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
+        System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
+        long vid = this.vertex.getId().get(), dest;
+        do {
+          dest = Math.abs(this.verData.getRandVertexGen().nextLong())
+              % getConf().getLong(
+                  PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10);
+        } while (dest == vid);
+
+        sendMessage(new LongWritable(dest), rm);
+      } else {
+        System.out.println("JaBeJa.SendRequestToRandomVertex is set false");
+        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+            rm);
+      }
 
     }
   }
@@ -444,7 +459,8 @@ public class NodePartitioningComputation
       ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
       if (al.size() == 0) {
         this.verData.setLockedEdgeTargetVertex(null);
-// don't send request messages since you do not have any outward edges.
+// don't send request messages since you do not have any outward edges to swap
+// with other vertex's edge.
       } else {
         this.verData.setLockedEdgeTargetVertex(al.get(this.verData
             .getLockEdgeIndex() % al.size()));
@@ -486,9 +502,20 @@ public class NodePartitioningComputation
 
         int myColor = rm.getEdge().color.get();
         rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
+        if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
+          long vid = this.vertex.getId().get(), dest;
+          do {
+            dest = Math.abs(this.verData.getRandVertexGen().nextLong())
+                % getConf().getLong(
+                    PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10);
+          } while (dest == vid);
 
-        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
-            rm);
+          sendMessage(new LongWritable(dest), rm);
+        } else {
+          sendMessage(
+              new LongWritable(this.verData.getLockedEdgeTargetVertex()), rm);
+        }
+
       }
     }
   }
