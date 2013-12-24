@@ -162,7 +162,7 @@ public class NodePartitioningComputation
     ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
 
     if (al.size() == 0) {
-      this.verData.setLockedEdgeTargetVertex(null);
+      this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
 // don't send request messages since you do not have any outward edges.
     } else {
       this.verData.setLockedEdgeTargetVertex(al.get(this.verData
@@ -336,9 +336,11 @@ public class NodePartitioningComputation
         continue;
       } else {
         for (Long l : verData.outEdges.keySet()) {
-          if (this.verData.getLockedEdgeTargetVertex() == null) {
-            System.out.println("LockedEdge Vertex is null.");
-            LOG.log(Level.INFO, "LockedEdge Vertex is null.");
+          if (this.verData.getLockedEdgeTargetVertex().longValue() == Long.MIN_VALUE) {
+            System.out
+                .println("LockedEdge Vertex  was not set.It means something is wrong");
+            LOG.log(Level.INFO,
+                "LockedEdge Vertex was not set.It means something is wrong");
           } else {
             if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
                 .longValue()) {
@@ -478,7 +480,7 @@ public class NodePartitioningComputation
        */
       ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
       if (al.size() == 0) {
-        this.verData.setLockedEdgeTargetVertex(null);
+        this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
 // don't send request messages since you do not have any outward edges to swap
 // with other vertex's edge.
       } else {

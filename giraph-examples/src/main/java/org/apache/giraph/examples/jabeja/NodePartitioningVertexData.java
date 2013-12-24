@@ -20,34 +20,36 @@ package org.apache.giraph.examples.jabeja;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Writable;
 
 /**
  * Vertex data for the NodePartitioning solution.
  */
-public class NodePartitioningVertexData extends VertexData {
+public class NodePartitioningVertexData implements Writable {
   /**
-   * Random generator to give the random vertices.
+   * This will contain information about the incoming edges from other vertices
+   * to this vertex.
    */
-  private Random randVertexGen = null;
+  public HashMap<Long, JabejaEdge> inEdges = new HashMap<Long, JabejaEdge>();
+  /**
+   * This will contain information about the outGoing edges from this vertex.
+   * And neighbor information for these edges
+   */
+  public HashMap<Long, OwnEdge> outEdges = new HashMap<Long, OwnEdge>();
+
   /**
    * This edge is locked and sent in Request to swap
    */
-  private Long lockedEdgeTargetVertex = null;
+  private Long lockedEdgeTargetVertex = Long.MIN_VALUE;
   /**
    * Index pointing to the next edge to be locked
    */
   private int lockEdgeIndex = 0;
-  /**
-   * The color of the current node
-   */
-  private int nodeColor;
-
-  /**
-   * Flag, which indicates if the color has changed since it has been reset the
-   * last time
-   */
-  private boolean hasColorChanged;
 
   /**
    * Default constructor for reflection
@@ -59,74 +61,25 @@ public class NodePartitioningVertexData extends VertexData {
     // randVertexGen = new Random(vertexId);
   }
 
-  public int getNodeColor() {
-    return nodeColor;
-  }
-
-  /**
-   * Sets the new node color and checks if it has changed, in that case it also
-   * sets the flag {@code hasColorChanged}
-   * 
-   * @param nodeColor the new color of the current vertex
-   */
-  public void setNodeColor(int nodeColor) {
-    if (this.nodeColor != nodeColor) {
-      this.nodeColor = nodeColor;
-      this.hasColorChanged = true;
-    }
-  }
-
-  /**
-   * Calculates the energy of the node according to <code>the number of
-   * neighbors - the number of neighbors in the same color</code>
-   * 
-   * @return the energy of the current node (how many neighbors are of a
-   *         different color)
-   */
-  public int getNodeEnergy() {
-    return super.getNumberOfNeighbors()
-        - getNumberOfNeighborsWithCurrentColor();
-  }
-
-  /**
-   * Simply calls <code>getNumberOfNeighbors</code> with the parameter of the
-   * current color.
-   * 
-   * @return the number of neighbors which have the same color as the current
-   *         node.
-   */
-  public int getNumberOfNeighborsWithCurrentColor() {
-    return super.getNumberOfNeighbors(getNodeColor());
-  }
-
   @Override
   public void readFields(DataInput input) throws IOException {
-    super.readFields(input);
-
-    this.nodeColor = input.readInt();
+    setLockEdgeIndex(input.readInt());
+    setLockedEdgeTargetVertex(Long.valueOf(input.readLong()));
+    mapReader(outEdges, input, new LongReaderWriter(),
+        new OwnEdgeReaderWriter());
+    mapReader(inEdges, input, new LongReaderWriter(),
+        new JabejaEdgeReaderWriter());
   }
 
   @Override
   public void write(DataOutput output) throws IOException {
-    super.write(output);
+    output.writeInt(lockEdgeIndex);
+    output.writeLong(lockedEdgeTargetVertex.longValue());
+    mapWriter(outEdges, output, new LongReaderWriter(),
+        new OwnEdgeReaderWriter());
+    mapWriter(inEdges, output, new LongReaderWriter(),
+        new JabejaEdgeReaderWriter());
 
-    output.writeInt(this.nodeColor);
-  }
-
-  @Override
-  public String toString() {
-    return Integer.toString(this.nodeColor);
-  }
-
-  public boolean getHasColorChanged() {
-    return this.hasColorChanged;
-  }
-
-  /**
-   * resets the {@code hasColorChanged}-flag and sets it back to false
-   */
-  public void resetHasColorChanged() {
-    this.hasColorChanged = false;
   }
 
   public Long getLockedEdgeTargetVertex() {
@@ -145,12 +98,83 @@ public class NodePartitioningVertexData extends VertexData {
     this.lockEdgeIndex = lockEdgeIndex;
   }
 
-  public Random getRandVertexGen() {
-    return randVertexGen;
+  /*
+   * public Random getRandVertexGen() { return randVertexGen; }
+   * 
+   * public void setRandVertexGen(Random randVertexGen) { this.randVertexGen =
+   * randVertexGen; }
+   */
+
+  public <K, V> void mapWriter(HashMap<K, V> map, DataOutput output,
+      FieldReaderWriter<K> keywriter, FieldReaderWriter<V> valueWriter)
+      throws IOException {
+    output.writeInt(map.size());
+    for (Map.Entry<K, V> e : map.entrySet()) {
+
+      keywriter.write(output, e.getKey());
+      valueWriter.write(output, e.getValue());
+    }
   }
 
-  public void setRandVertexGen(Random randVertexGen) {
-    this.randVertexGen = randVertexGen;
+  public <K, V> void mapReader(HashMap<K, V> map, DataInput input,
+      FieldReaderWriter<K> keyReaderWriter,
+      FieldReaderWriter<V> valueReaderWriter) throws IOException {
+    int size = input.readInt();
+    while (size > 0) {
+      K key = keyReaderWriter.read(input);
+      V value = valueReaderWriter.read(input);
+      map.put(key, value);
+      size--;
+    }
+  }
+
+  private interface FieldReaderWriter<K> {
+    public void write(DataOutput output, K field) throws IOException;
+
+    public K read(DataInput input) throws IOException;
+  }
+
+  private class LongReaderWriter implements FieldReaderWriter<Long> {
+
+    public void write(DataOutput output, Long val) throws IOException {
+      output.writeLong(val.longValue());
+    }
+
+    public Long read(DataInput input) throws IOException {
+      return Long.valueOf(input.readLong());
+    }
+  }
+
+  private class JabejaEdgeReaderWriter implements FieldReaderWriter<JabejaEdge> {
+    public void write(DataOutput output, JabejaEdge je) throws IOException {
+      output.writeLong(je.sourceVetex.get());
+      output.writeLong(je.destVertex.get());
+      output.writeInt(je.color.get());
+    }
+
+    public JabejaEdge read(DataInput input) throws IOException {
+      long srcVertex = input.readLong();
+      long destVertex = input.readLong();
+      int color = input.readInt();
+      return new JabejaEdge(new LongWritable(srcVertex), new LongWritable(
+          destVertex), new IntWritable(color));
+    }
+  }
+
+  private class OwnEdgeReaderWriter implements FieldReaderWriter<OwnEdge> {
+    public void write(DataOutput output, OwnEdge we) throws IOException {
+      new JabejaEdgeReaderWriter().write(output, we.details);
+      mapWriter(we.neighbours, output, new LongReaderWriter(),
+          new JabejaEdgeReaderWriter());
+    }
+
+    public OwnEdge read(DataInput input) throws IOException {
+      JabejaEdge je = new JabejaEdgeReaderWriter().read(input);
+      OwnEdge eg = new OwnEdge(je);
+      mapReader(eg.neighbours, input, new LongReaderWriter(),
+          new JabejaEdgeReaderWriter());
+      return eg;
+    }
   }
 
 }
