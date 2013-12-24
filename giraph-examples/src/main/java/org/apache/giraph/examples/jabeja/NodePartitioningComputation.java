@@ -44,7 +44,7 @@ public class NodePartitioningComputation
    * The default number of different colors, if no JaBeJa.NumberOfColors is
    * provided.
    */
-  // private static final int DEFAULT_NUMBER_OF_COLORS = 2;this
+  // private static final int DEFAULT_NUMBER_OF_COLORS = 2;this that
   private static final Logger LOG = Logger
       .getLogger(NodePartitioningComputation.class);
   /**
