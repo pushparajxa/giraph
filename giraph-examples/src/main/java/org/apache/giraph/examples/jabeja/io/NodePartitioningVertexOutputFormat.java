@@ -50,7 +50,7 @@ public class NodePartitioningVertexOutputFormat
         Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex)
         throws IOException {
       StringBuilder sb = new StringBuilder();
-      NodePartitioningVertexData value = vertex.getValue();
+      // NodePartitioningVertexData value = vertex.getValue();
 
       sb.append(vertex.getId());
       sb.append(":\t");

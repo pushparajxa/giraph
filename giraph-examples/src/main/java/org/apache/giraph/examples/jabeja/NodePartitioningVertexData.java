@@ -35,12 +35,12 @@ public class NodePartitioningVertexData implements Writable {
    * This will contain information about the incoming edges from other vertices
    * to this vertex.
    */
-  public HashMap<Long, JabejaEdge> inEdges = new HashMap<Long, JabejaEdge>();
+  private HashMap<Long, JabejaEdge> inEdges = new HashMap<Long, JabejaEdge>();
   /**
    * This will contain information about the outGoing edges from this vertex.
    * And neighbor information for these edges
    */
-  public HashMap<Long, OwnEdge> outEdges = new HashMap<Long, OwnEdge>();
+  private HashMap<Long, OwnEdge> outEdges = new HashMap<Long, OwnEdge>();
 
   /**
    * This edge is locked and sent in Request to swap
@@ -105,7 +105,7 @@ public class NodePartitioningVertexData implements Writable {
    * randVertexGen; }
    */
 
-  public <K, V> void mapWriter(HashMap<K, V> map, DataOutput output,
+  public static <K, V> void mapWriter(HashMap<K, V> map, DataOutput output,
       FieldReaderWriter<K> keywriter, FieldReaderWriter<V> valueWriter)
       throws IOException {
     output.writeInt(map.size());
@@ -116,7 +116,7 @@ public class NodePartitioningVertexData implements Writable {
     }
   }
 
-  public <K, V> void mapReader(HashMap<K, V> map, DataInput input,
+  public static <K, V> void mapReader(HashMap<K, V> map, DataInput input,
       FieldReaderWriter<K> keyReaderWriter,
       FieldReaderWriter<V> valueReaderWriter) throws IOException {
     int size = input.readInt();
@@ -134,7 +134,7 @@ public class NodePartitioningVertexData implements Writable {
     public K read(DataInput input) throws IOException;
   }
 
-  private class LongReaderWriter implements FieldReaderWriter<Long> {
+  private static class LongReaderWriter implements FieldReaderWriter<Long> {
 
     public void write(DataOutput output, Long val) throws IOException {
       output.writeLong(val.longValue());
@@ -145,7 +145,8 @@ public class NodePartitioningVertexData implements Writable {
     }
   }
 
-  private class JabejaEdgeReaderWriter implements FieldReaderWriter<JabejaEdge> {
+  private static class JabejaEdgeReaderWriter implements
+      FieldReaderWriter<JabejaEdge> {
     public void write(DataOutput output, JabejaEdge je) throws IOException {
       output.writeLong(je.sourceVetex.get());
       output.writeLong(je.destVertex.get());
@@ -161,7 +162,8 @@ public class NodePartitioningVertexData implements Writable {
     }
   }
 
-  private class OwnEdgeReaderWriter implements FieldReaderWriter<OwnEdge> {
+  private static class OwnEdgeReaderWriter implements
+      FieldReaderWriter<OwnEdge> {
     public void write(DataOutput output, OwnEdge we) throws IOException {
       new JabejaEdgeReaderWriter().write(output, we.details);
       mapWriter(we.neighbours, output, new LongReaderWriter(),
@@ -175,6 +177,22 @@ public class NodePartitioningVertexData implements Writable {
           new JabejaEdgeReaderWriter());
       return eg;
     }
+  }
+
+  public HashMap<Long, JabejaEdge> getInEdges() {
+    return inEdges;
+  }
+
+  public void setInEdges(HashMap<Long, JabejaEdge> inEdges) {
+    this.inEdges = inEdges;
+  }
+
+  public HashMap<Long, OwnEdge> getOutEdges() {
+    return outEdges;
+  }
+
+  public void setOutEdges(HashMap<Long, OwnEdge> outEdges) {
+    this.outEdges = outEdges;
   }
 
 }

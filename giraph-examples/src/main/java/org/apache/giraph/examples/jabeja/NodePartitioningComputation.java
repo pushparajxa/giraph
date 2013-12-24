@@ -108,7 +108,7 @@ public class NodePartitioningComputation
    */
   private IntWritable calculateEnergy() {
     int energy = 0;
-    for (Map.Entry<Long, OwnEdge> e : verData.outEdges.entrySet()) {
+    for (Map.Entry<Long, OwnEdge> e : verData.getOutEdges().entrySet()) {
       energy = energy
           + calculateEnergyOfEdge(e.getKey(), e.getValue().details.color.get());
     }
@@ -130,9 +130,9 @@ public class NodePartitioningComputation
        * 1. Search for this edge in inEdges, if not 2. Search in outEdges.
        */
       boolean done = false;
-      for (Long l : verData.inEdges.keySet()) {
+      for (Long l : verData.getInEdges().keySet()) {
         if (l.longValue() == je.sourceVetex.get()) {
-          verData.inEdges.get(l).color = new IntWritable(je.color.get());
+          verData.getInEdges().get(l).color = new IntWritable(je.color.get());
           done = true;
         }
       }
@@ -140,7 +140,7 @@ public class NodePartitioningComputation
         continue;
       } else {
         ArrayList<JabejaEdge> edges = new ArrayList<JabejaEdge>();
-        for (Map.Entry<Long, OwnEdge> e : verData.outEdges.entrySet()) {
+        for (Map.Entry<Long, OwnEdge> e : verData.getOutEdges().entrySet()) {
           edges.addAll(e.getValue().neighbours.values());
         }
         for (JabejaEdge jedge : edges) {
@@ -159,7 +159,7 @@ public class NodePartitioningComputation
      * Select some random vertex and send all the edge data[neighbour
      * information] about the locked one in above.
      */
-    ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
+    ArrayList<Long> al = new ArrayList<Long>(verData.getOutEdges().keySet());
 
     if (al.size() == 0) {
       this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
@@ -178,21 +178,21 @@ public class NodePartitioningComputation
        */
 
       ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-          verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).neighbours
+          verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).neighbours
               .values());
 
       /*
        * Add the outEdges of this vertex
        */
-      for (Long l : verData.outEdges.keySet()) {
+      for (Long l : verData.getOutEdges().keySet()) {
         if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
             .longValue())
-          neighbrs.add(verData.outEdges.get(l).details);
+          neighbrs.add(verData.getOutEdges().get(l).details);
       }
       /*
        * Adds the incoming edges at this vertex.
        */
-      neighbrs.addAll(verData.inEdges.values());
+      neighbrs.addAll(verData.getInEdges().values());
 
       /*
        * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
@@ -202,10 +202,9 @@ public class NodePartitioningComputation
        * LongWritable(lockedEdgeTargetVertex), rm);
        */
 
-      Message rm = new Message(
-          this.vertex.getId().get(),
-          verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).details,
-          neighbrs, 0, Message.RQST_MESSAGE);
+      Message rm = new Message(this.vertex.getId().get(), verData.getOutEdges()
+          .get(this.verData.getLockedEdgeTargetVertex()).details, neighbrs, 0,
+          Message.RQST_MESSAGE);
       int myColor = rm.getEdge().color.get();
       rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
 
@@ -254,14 +253,14 @@ public class NodePartitioningComputation
 
       } else if (msgType.equals(Message.RQST_SUCC_MESSAGE)) {
         JabejaEdge edge = msg.getEdge();
-        verData.outEdges.get(edge.destVertex.get()).details.color = new IntWritable(
+        verData.getOutEdges().get(edge.destVertex.get()).details.color = new IntWritable(
             edge.color.get());
         /* Send this update to neighbors of this edge */
         /*
          * 1. To inedges of this vertex. 2. To neighbour edges at the end of
          * other vetex for this vertex.
          */
-        for (Long l : verData.inEdges.keySet()) {
+        for (Long l : verData.getInEdges().keySet()) {
           /*
            * sendMessage(new LongWritable(l), new
            * UpdateMessage(this.vertex.getId(), edge));
@@ -269,7 +268,7 @@ public class NodePartitioningComputation
           sendMessage(new LongWritable(l), new Message(this.vertex.getId()
               .get(), edge, Message.UPDATE_MESSAGE));
         }
-        for (JabejaEdge je : verData.outEdges.get(edge.destVertex.get()).neighbours
+        for (JabejaEdge je : verData.getOutEdges().get(edge.destVertex.get()).neighbours
             .values()) {
           /*
            * sendMessage(je.sourceVetex, new UpdateMessage(this.vertex.getId(),
@@ -305,8 +304,8 @@ public class NodePartitioningComputation
      * verData.outEdges.get(l))); }
      */
 
-    if (verData.outEdges.keySet().size() == 1
-        || verData.outEdges.keySet().size() == 0) {
+    if (verData.getOutEdges().keySet().size() == 1
+        || verData.getOutEdges().keySet().size() == 0) {
       /*
        * Only one outgoing edge and that one is locked so send ReqeustCancelled
        * message to all the requests.
@@ -335,7 +334,7 @@ public class NodePartitioningComputation
             .getId().get(), Message.RQST_NOT_PRCSS_MESSAGE));
         continue;
       } else {
-        for (Long l : verData.outEdges.keySet()) {
+        for (Long l : verData.getOutEdges().keySet()) {
           if (this.verData.getLockedEdgeTargetVertex().longValue() == Long.MIN_VALUE) {
             System.out
                 .println("LockedEdge Vertex  was not set.It means something is wrong");
@@ -350,8 +349,8 @@ public class NodePartitioningComputation
                  * to the reuqetsed vertex
                  */
                 int k = rm.getEdge().color.get();
-                rm.getEdge().color = verData.outEdges.get(l).details.color;
-                verData.outEdges.get(l).details.color = new IntWritable(k);
+                rm.getEdge().color = verData.getOutEdges().get(l).details.color;
+                verData.getOutEdges().get(l).details.color = new IntWritable(k);
                 /*
                  * sendMessage(new LongWritable(rm.getVertexId()), new
                  * RequestSucceededMessage(this.vertex.getId(), rm.requstEdge));
@@ -386,13 +385,13 @@ public class NodePartitioningComputation
 
   private boolean swapPossible(Long l, Message rm) {
     int edgeOldEnergy = calculateEnergyOfEdge(l,
-        verData.outEdges.get(l).details.color.get());
+        verData.getOutEdges().get(l).details.color.get());
     int requestOldEnergy = calculateEnergyOfRequest(rm,
         rm.getEdge().color.get());
     int totalEneryOld = edgeOldEnergy + requestOldEnergy;
     int edgeNewEnergy = calculateEnergyOfEdge(l, rm.getEdge().color.get());
-    int requestNewEnergy = calculateEnergyOfRequest(rm,
-        verData.outEdges.get(l).details.color.get());
+    int requestNewEnergy = calculateEnergyOfRequest(rm, verData.getOutEdges()
+        .get(l).details.color.get());
     int totalEnergyNew = edgeNewEnergy + requestNewEnergy;
     if (totalEnergyNew < totalEneryOld)
       return true;
@@ -419,7 +418,7 @@ public class NodePartitioningComputation
    * Calculates the energy of a given edge
    */
   private Integer calculateEnergyOfEdge(Long lg, int color) {
-    OwnEdge ownEdge = verData.outEdges.get(lg);
+    OwnEdge ownEdge = verData.getOutEdges().get(lg);
     // int myColor = ownEdge.details.color.get();
     int energy = 0;
     ArrayList<JabejaEdge> edges = new ArrayList<JabejaEdge>(
@@ -428,15 +427,15 @@ public class NodePartitioningComputation
     /*
      * Add all the inedges
      */
-    edges.addAll(verData.inEdges.values());
+    edges.addAll(verData.getInEdges().values());
     /*
      * Add all the outgoing edges from this vertex except the edge in question
      * and the lockedEdge which is sent as a request for swapping
      */
-    for (Long l : verData.outEdges.keySet()) {
+    for (Long l : verData.getOutEdges().keySet()) {
       if (l.longValue() != this.verData.getLockedEdgeTargetVertex().longValue()
           && l.longValue() != lg.longValue())
-        edges.add(verData.outEdges.get(l).details);
+        edges.add(verData.getOutEdges().get(l).details);
     }
 
     /*
@@ -478,7 +477,7 @@ public class NodePartitioningComputation
        * Select some random vertex and send all the edge data[neighbour
        * information] about the locked one in above.
        */
-      ArrayList<Long> al = new ArrayList<Long>(verData.outEdges.keySet());
+      ArrayList<Long> al = new ArrayList<Long>(verData.getOutEdges().keySet());
       if (al.size() == 0) {
         this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
 // don't send request messages since you do not have any outward edges to swap
@@ -497,21 +496,21 @@ public class NodePartitioningComputation
          */
 
         ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-            verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).neighbours
+            verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).neighbours
                 .values());
 
         /*
          * Add the outEdges of this vertex
          */
-        for (Long l : verData.outEdges.keySet()) {
+        for (Long l : verData.getOutEdges().keySet()) {
           if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
               .longValue())
-            neighbrs.add(verData.outEdges.get(l).details);
+            neighbrs.add(verData.getOutEdges().get(l).details);
         }
         /*
          * Adds the incoming edges at this vertex.
          */
-        neighbrs.addAll(verData.inEdges.values());
+        neighbrs.addAll(verData.getInEdges().values());
 
         /*
          * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
@@ -519,7 +518,7 @@ public class NodePartitioningComputation
          */
         Message rm = new Message(
             this.vertex.getId().get(),
-            verData.outEdges.get(this.verData.getLockedEdgeTargetVertex()).details,
+            verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).details,
             neighbrs, 0, Message.RQST_MESSAGE);
 
         int myColor = rm.getEdge().color.get();
@@ -566,8 +565,8 @@ public class NodePartitioningComputation
        * this.vertex.getValue().outEdges.get(fm.getVertexId()).neighbours
        * .putAll(fm.getEdges());
        */
-      this.vertex.getValue().outEdges.get(m.getVertexId()).neighbours.putAll(m
-          .getEdges());
+      this.vertex.getValue().getOutEdges().get(m.getVertexId()).neighbours
+          .putAll(m.getEdges());
     }
   }
 
@@ -585,13 +584,13 @@ public class NodePartitioningComputation
     for (Message m : messages) {
       // ZeroMessage zm = (ZeroMessage) m;
       JabejaEdge je = m.getEdge();
-      this.vertex.getValue().inEdges.put(je.sourceVetex.get(), je);
+      this.vertex.getValue().getInEdges().put(je.sourceVetex.get(), je);
 
     }
     for (Message msg : messages) {
       /* Populate the map , which will be sent */
       HashMap<Long, JabejaEdge> outEdges2 = new HashMap<Long, JabejaEdge>();
-      for (Map.Entry<Long, OwnEdge> e : this.vertex.getValue().outEdges
+      for (Map.Entry<Long, OwnEdge> e : this.vertex.getValue().getOutEdges()
           .entrySet()) {
         outEdges2.put(e.getKey(), e.getValue().details);
       }
@@ -599,7 +598,7 @@ public class NodePartitioningComputation
        * put the in-edges since they are neighbors of the edge from which we got
        * this incoming message
        */
-      for (Map.Entry<Long, JabejaEdge> e : verData.inEdges.entrySet()) {
+      for (Map.Entry<Long, JabejaEdge> e : verData.getInEdges().entrySet()) {
         if (e.getKey() != msg.getVertexId()) {
           outEdges2.put(e.getKey(), e.getValue());
         }
@@ -653,9 +652,13 @@ public class NodePartitioningComputation
      * sendCurrentVertexColor(new LongWritable(neighborId)); }
      */
     for (Edge<LongWritable, IntWritable> e : this.vertex.getEdges()) {
-      this.vertex.getValue().outEdges.put(e.getTargetVertexId().get(),
-          new OwnEdge(new JabejaEdge(this.vertex.getId(),
-              e.getTargetVertexId(), e.getValue())));
+      this.vertex
+          .getValue()
+          .getOutEdges()
+          .put(
+              e.getTargetVertexId().get(),
+              new OwnEdge(new JabejaEdge(this.vertex.getId(), e
+                  .getTargetVertexId(), e.getValue())));
       /*
        * sendMessage( e.getTargetVertexId(), new
        * ZeroMessage(this.vertex.getId(), new JabejaEdge(this.vertex .getId(),
