@@ -17,6 +17,8 @@
  */
 package org.apache.giraph.examples.jabeja.io;
 
+import java.io.IOException;
+
 import org.apache.giraph.examples.jabeja.NodePartitioningVertexData;
 import org.apache.giraph.graph.Vertex;
 import org.apache.giraph.io.formats.TextVertexOutputFormat;
@@ -25,45 +27,42 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-import java.io.IOException;
-
 /**
  * A simple output format for vertices for the Node-Partitioning Problem
  */
-public class NodePartitioningVertexOutputFormat extends
-        TextVertexOutputFormat<LongWritable, NodePartitioningVertexData,
-                IntWritable> {
+public class NodePartitioningVertexOutputFormat
+    extends
+    TextVertexOutputFormat<LongWritable, NodePartitioningVertexData, IntWritable> {
   @Override
-  public TextVertexWriter createVertexWriter(
-          TaskAttemptContext context) throws IOException, InterruptedException {
+  public TextVertexWriter createVertexWriter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
     return new NodePartitioningVertexWriter();
   }
 
   /**
-   * A debug output writer which provides you with all the information each
-   * node has.
+   * A debug output writer which provides you with all the information each node
+   * has.
    */
-  private class NodePartitioningVertexWriter
-          extends TextVertexWriterToEachLine {
+  private class NodePartitioningVertexWriter extends TextVertexWriterToEachLine {
 
     @Override
     protected Text convertVertexToLine(
-            Vertex<LongWritable, NodePartitioningVertexData,
-                    IntWritable> vertex) throws IOException {
+        Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex)
+        throws IOException {
       StringBuilder sb = new StringBuilder();
       NodePartitioningVertexData value = vertex.getValue();
 
       sb.append(vertex.getId());
       sb.append(":\t");
-      sb.append(value.getNodeColor());
+      // sb.append(value.getNodeColor());
       sb.append("; ");
-      sb.append(value.getNodeEnergy());
+      // sb.append(value.getNodeEnergy());
       sb.append("\t[");
 
-      for (Long l : value.getNeighbors()) {
-        sb.append(l);
-        sb.append(", ");
-      }
+// for (Long l : value.getNeighbors()) {
+// sb.append(l);
+// sb.append(", ");
+// }
       sb.append("]");
 
       return new Text(sb.toString());
