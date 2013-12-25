@@ -433,18 +433,27 @@ public class NodePartitioningComputation
     int requestNewEnergy = calculateEnergyOfRequest(rm, verData.getOutEdges()
         .get(l).details.color.get());
     double totalEnergyNew;
+    int alpha = getConf().getInt("JaBeJa.alpha", 1);
+
     if (getConf().getBoolean("JaBeJa.annealingEnabled", false)) {
-      // float temp = getConf().getFloat("JaBeJa.initTemp", 2);
-      int alpha = getConf().getInt("JaBeJa.alpha", 1);
+      float temp = getConf().getFloat("JaBeJa.initTemp", 2);
+      float delta = getConf().getFloat("JaBeJa.delta", 0.0001f);
+
       totalEneryOld = Math.pow(edgeOldEnergy, alpha)
           + Math.pow(requestOldEnergy, alpha);
 
       totalEnergyNew = Math.pow(edgeNewEnergy, alpha)
           + Math.pow(requestNewEnergy, alpha);
 
+      totalEnergyNew = totalEnergyNew * (temp - ((getSuperstep() / 4) * delta));
+
     } else {
-      totalEneryOld = edgeOldEnergy + requestOldEnergy;
-      totalEnergyNew = edgeNewEnergy + requestNewEnergy;
+
+      totalEneryOld = Math.pow(edgeOldEnergy, alpha)
+          + Math.pow(requestOldEnergy, alpha);
+
+      totalEnergyNew = Math.pow(edgeNewEnergy, alpha)
+          + Math.pow(requestNewEnergy, alpha);
 
     }
 
