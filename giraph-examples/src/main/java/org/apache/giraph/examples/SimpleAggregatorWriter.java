@@ -68,7 +68,7 @@ public class SimpleAggregatorWriter extends
   @Override
   public void writeAggregator(Iterable<Entry<String, Writable>> aggregatorMap,
       long superstep) throws IOException {
-    if (superstep % 3 == 0) {
+    if (superstep % 4 == 3) {
       for (Entry<String, Writable> entry : aggregatorMap) {
         Text t = new Text("SuperStep=" + superstep + ".Energy= "
             + entry.getValue().toString() + "\n");

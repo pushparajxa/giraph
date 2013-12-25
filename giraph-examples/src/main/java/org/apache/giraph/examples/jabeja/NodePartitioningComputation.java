@@ -100,7 +100,8 @@ public class NodePartitioningComputation
      * receiving the Request Messages.
      */
 
-    if (getSuperstep() % 4 == 3) {
+    if (getSuperstep() % 4 == 3) { // if you change this if condition change in
+// SimpleAggregatorWriter also.
       aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
     }
 
