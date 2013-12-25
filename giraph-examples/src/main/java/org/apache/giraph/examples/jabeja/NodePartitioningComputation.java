@@ -102,6 +102,8 @@ public class NodePartitioningComputation
 
     if (getSuperstep() % 4 == 3) { // if you change this if condition change in
 // SimpleAggregatorWriter also.
+      System.out.println("Energy at Vertex =" + vertex.getId().get()
+          + ".SuperStep=" + getSuperstep() + " is =" + calculateEnergy());
       aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
     }
 
