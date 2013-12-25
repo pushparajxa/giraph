@@ -47,6 +47,7 @@ public class Message extends BaseWritable {
   public final static String UPDATE_MESSAGE = "UpdateMessage";
   public final static String RQST_MESSAGE = "RequestMessage";
   public final static String RQST_NOT_SUCC_MESSAGE = "RequestNotSuccessMessage";
+  public static final String LOCKED_EDGE = "Message Containing the Edge selected for Swap.";
 
   /**
    * Id of the source vertex sending the message. Necessary for replies or
@@ -192,6 +193,14 @@ public class Message extends BaseWritable {
       edge = new JabejaEdge(new LongWritable(srcVertex), new LongWritable(
           destVertex), new IntWritable(color));
 
+    } else if (messageType.equals(LOCKED_EDGE)) {
+
+      long srcVertex = dataInput.readLong();
+      long destVertex = dataInput.readLong();
+      int color = dataInput.readInt();
+      edge = new JabejaEdge(new LongWritable(srcVertex), new LongWritable(
+          destVertex), new IntWritable(color));
+
     }
   }
 
@@ -248,6 +257,12 @@ public class Message extends BaseWritable {
       dataOutput.writeInt(edge.color.get());
 
     } else if (messageType.equals(ZERO_MESSAGE)) {
+
+      dataOutput.writeLong(edge.sourceVetex.get());
+      dataOutput.writeLong(edge.destVertex.get());
+      dataOutput.writeInt(edge.color.get());
+
+    } else if (messageType.equals(LOCKED_EDGE)) {
 
       dataOutput.writeLong(edge.sourceVetex.get());
       dataOutput.writeLong(edge.destVertex.get());

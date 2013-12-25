@@ -20,8 +20,10 @@ package org.apache.giraph.examples.jabeja;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
@@ -80,13 +82,16 @@ public class NodePartitioningComputation
     if (super.getSuperstep() < 3) {
       initializeGraph(messages);
     } else {
-      if (getSuperstep() % 3 == 0) {
+      if (getSuperstep() % 4 == 3) {
+        processLockedEdgeMessages(messages);
+      }
+      if (getSuperstep() % 4 == 0) {
         processReqeustMessages(messages);
       }
-      if (getSuperstep() % 3 == 1) {
+      if (getSuperstep() % 4 == 1) {
         processRequestResponses(messages);
       }
-      if (getSuperstep() % 3 == 2) {
+      if (getSuperstep() % 4 == 2) {
         processUpdateMessages(messages);
       }
     }
@@ -95,10 +100,79 @@ public class NodePartitioningComputation
      * receiving the Request Messages.
      */
 
-    if (getSuperstep() % 3 == 2) {
+    if (getSuperstep() % 4 == 3) {
       aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
     }
 
+  }
+
+  private void processLockedEdgeMessages(Iterable<Message> messages) {
+
+    ArrayList<JabejaEdge> al = new ArrayList<JabejaEdge>();
+    HashSet<String> hset = new HashSet<String>();
+
+    for (Message msg : messages) {
+      al.add(msg.getEdge());
+      hset.add(msg.getEdge().getId());
+    }
+    verData.setLockedEdges(al);
+    verData.setLockedEdgedIds(hset);
+
+    /*
+     * Now send the Request Message, if this vertex has any outward edges.
+     */
+    if (verData.getOutEdges().size() == 0) {
+      // Do not send any request messages since this vertex doesn't have any
+// outWard Edges.
+    } else {
+      ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
+          verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).neighbours
+              .values());
+
+      /*
+       * Add the outEdges of this vertex
+       */
+      for (Long l : verData.getOutEdges().keySet()) {
+        if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
+            .longValue())
+          neighbrs.add(verData.getOutEdges().get(l).details);
+      }
+      /*
+       * Adds the incoming edges at this vertex.
+       */
+      neighbrs.addAll(verData.getInEdges().values());
+
+      /*
+       * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
+       * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+       */
+      Message rm = new Message(this.vertex.getId().get(), verData.getOutEdges()
+          .get(this.verData.getLockedEdgeTargetVertex()).details, neighbrs, 0,
+          Message.RQST_MESSAGE);
+
+      int myColor = rm.getEdge().color.get();
+      rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
+
+      if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
+        long vid = this.vertex.getId().get(), dest, tmp;
+        do {
+          tmp = rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
+          // tmp = (new Random(vid)).nextLong();
+          // tmp = r.nextLong();
+          if (tmp < 0) {
+            tmp = -tmp;
+          }
+          dest = tmp
+              % (getConf().getLong(
+                  PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
+        } while (dest == vid);
+
+        sendMessage(new LongWritable(dest), rm);
+      } else {
+        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
+            rm);
+      }
+    }
   }
 
   /**
@@ -153,87 +227,50 @@ public class NodePartitioningComputation
 
     }
 
-    // Send Request to swap.
-    /**
-     * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
-     * Select some random vertex and send all the edge data[neighbour
-     * information] about the locked one in above.
+    /*
+     * 1. Identify the edge you want to swap its color.If there are no outgoing
+     * edges then do send any message. 2. Send information of locking this edge
+     * to the vertices who are the owners of the neighbors of this edge.
      */
-    ArrayList<Long> al = new ArrayList<Long>(verData.getOutEdges().keySet());
 
+    ArrayList<Long> al = new ArrayList<Long>(verData.getOutEdges().keySet());
     if (al.size() == 0) {
       this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
-// don't send request messages since you do not have any outward edges.
+// don't send request messages since you do not have any outward edges to swap
+// with other vertex's edge.
     } else {
       this.verData.setLockedEdgeTargetVertex(al.get(this.verData
           .getLockEdgeIndex() % al.size()));
       this.verData.setLockEdgeIndex(this.verData.getLockEdgeIndex() + 1);
-      System.out.println("Locked Edge is "
+      System.out.println("Edge selected for swapping's Target Vertex= "
           + this.verData.getLockedEdgeTargetVertex().longValue());
-      /**
-       * Until Random vertex getter functionality implemented lets send it to
-       * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
-       * the neighbouring edges of this edge.And the sourceVertexId, that is the
-       * request sending vertex's id.
-       */
 
-      ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-          verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).neighbours
-              .values());
-
-      /*
-       * Add the outEdges of this vertex
-       */
-      for (Long l : verData.getOutEdges().keySet()) {
-        if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
-            .longValue())
-          neighbrs.add(verData.getOutEdges().get(l).details);
+      // Send that this edge has been selected for swapping to its neighbors.
+      Set<LongWritable> vrtces = new HashSet<LongWritable>();
+      for (JabejaEdge je : verData.getOutEdges().get(
+          verData.getLockedEdgeTargetVertex()).neighbours.values()) {
+        vrtces.add(je.sourceVetex);
       }
       /*
-       * Adds the incoming edges at this vertex.
+       * Add the source vertices of in-edges to this vertex.
        */
-      neighbrs.addAll(verData.getInEdges().values());
-
-      /*
-       * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
-       * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs); int
-       * myColor = rm.requstEdge.color.get();
-       * rm.setEnergy(calculateEnergyOfRequest(rm, myColor)); sendMessage(new
-       * LongWritable(lockedEdgeTargetVertex), rm);
-       */
-
-      Message rm = new Message(this.vertex.getId().get(), verData.getOutEdges()
-          .get(this.verData.getLockedEdgeTargetVertex()).details, neighbrs, 0,
-          Message.RQST_MESSAGE);
-      int myColor = rm.getEdge().color.get();
-      rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-
-      if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
-        System.out.println("JaBeJa.SendRequestToRandomVertex is set true");
-        long vid = this.vertex.getId().get(), dest, tmp;
-        do {
-          tmp = rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
-          // tmp = r.nextLong();
-          if (tmp < 0) {
-            tmp = -tmp;
-          }
-          dest = tmp
-              % (getConf().getLong(
-                  PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
-        } while (dest == vid);
-
-        sendMessage(new LongWritable(dest), rm);
-      } else {
-        System.out.println("JaBeJa.SendRequestToRandomVertex is set false");
-        sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
-            rm);
+      for (Long l : verData.getInEdges().keySet()) {
+        vrtces.add(new LongWritable(l));
       }
 
       /*
-       * sendMessage(new LongWritable(this.verData.getLockedEdgeTargetVertex()),
-       * rm);
+       * Send message to each of the vertices, which are owners of the
+       * neighboring edges of this edge.
        */
+      Message LockedEdgeMessage = new Message(vertex.getId().get(), verData
+          .getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).details,
+          Message.LOCKED_EDGE);
+
+      for (LongWritable l : vrtces) {
+        sendMessage(l, LockedEdgeMessage);
+      }
     }
+
   }
 
   /**
@@ -440,11 +477,16 @@ public class NodePartitioningComputation
 
     /*
      * Now we have all edges , let's calculate the energu of the edge. Energy =
-     * no.of edges with color different than it's.
+     * no.of edges with color different than it's. And make sure that the
+     * neighbor is not a locked edge.
      */
+    HashSet<String> lockedIds = verData.getLockedEdgedIds();
     for (JabejaEdge j : edges) {
-      if (j.color.get() != color)
-        energy++;
+      if (!lockedIds.contains(j.getId())) {
+        if (j.color.get() != color) {
+          energy++;
+        }
+      }
     }
     return Integer.valueOf(energy);
   }
@@ -459,10 +501,10 @@ public class NodePartitioningComputation
   private void initializeGraph(Iterable<Message> messages) {
     if (getSuperstep() == 0) {
       /**
-       * Announce colour of the outgoing edges
+       * Announce color of the outgoing edges
        */
       announceColor();
-      // LOG.trace("Successfully announec the color");
+      // LOG.trace("Successfully announce the color");
       LOG.log(Level.INFO, "Successfully announecd the color");
     } else if (getSuperstep() == 1) {
       storeZeroMessages(messages);
@@ -470,13 +512,13 @@ public class NodePartitioningComputation
       LOG.log(Level.INFO, "Successfully stored Zero Messages");
     } else if (getSuperstep() == 2) {
       storeFirstMessages(messages);
-
-      // Send Request to swap.
-      /**
-       * 1. Select one edge[ownEdgs9outGoign edges)] and mark it as locked. 2.
-       * Select some random vertex and send all the edge data[neighbour
-       * information] about the locked one in above.
+      /*
+       * 1. Identify the edge you want to swap its color.If there are no
+       * outgoing edges then do send any message. 2. Send information of locking
+       * this edge to the vertices who are the owners of the neighbors of this
+       * edge.
        */
+
       ArrayList<Long> al = new ArrayList<Long>(verData.getOutEdges().keySet());
       if (al.size() == 0) {
         this.verData.setLockedEdgeTargetVertex(Long.MIN_VALUE);
@@ -486,69 +528,36 @@ public class NodePartitioningComputation
         this.verData.setLockedEdgeTargetVertex(al.get(this.verData
             .getLockEdgeIndex() % al.size()));
         this.verData.setLockEdgeIndex(this.verData.getLockEdgeIndex() + 1);
-        System.out.println("Locked Edge's Target Vertex= "
+        System.out.println("Edge selected for swapping's Target Vertex= "
             + this.verData.getLockedEdgeTargetVertex().longValue());
-        /**
-         * Until Random vertex getter functionality implemented lets send it to
-         * the lockedEdgeTargetVertex. Send a RequestMessage which conatins all
-         * the neighbouring edges of this edge.And the sourceVertexId, that is
-         * the request sending vertex's id.
-         */
 
-        ArrayList<JabejaEdge> neighbrs = new ArrayList<JabejaEdge>(
-            verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).neighbours
-                .values());
-
-        /*
-         * Add the outEdges of this vertex
-         */
-        for (Long l : verData.getOutEdges().keySet()) {
-          if (l.longValue() != this.verData.getLockedEdgeTargetVertex()
-              .longValue())
-            neighbrs.add(verData.getOutEdges().get(l).details);
+        // Send that this edge has been selected for swapping to its neighbors.
+        Set<LongWritable> vrtces = new HashSet<LongWritable>();
+        for (JabejaEdge je : verData.getOutEdges().get(
+            verData.getLockedEdgeTargetVertex()).neighbours.values()) {
+          vrtces.add(je.sourceVetex);
         }
         /*
-         * Adds the incoming edges at this vertex.
+         * Add the source vertices of in-edges to this vertex.
          */
-        neighbrs.addAll(verData.getInEdges().values());
+        for (Long l : verData.getInEdges().keySet()) {
+          vrtces.add(new LongWritable(l));
+        }
 
         /*
-         * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
-         * verData.outEdges.get(lockedEdgeTargetVertex).details, neighbrs);
+         * Send message to each of the vertices, which are owners of the
+         * neighboring edges of this edge.
          */
-        Message rm = new Message(
-            this.vertex.getId().get(),
+        Message LockedEdgeMessage = new Message(
+            vertex.getId().get(),
             verData.getOutEdges().get(this.verData.getLockedEdgeTargetVertex()).details,
-            neighbrs, 0, Message.RQST_MESSAGE);
+            Message.LOCKED_EDGE);
 
-        int myColor = rm.getEdge().color.get();
-        rm.setEnergy(calculateEnergyOfRequest(rm, myColor));
-
-        if (getConf().getBoolean("JaBeJa.SendRequestToRandomVertex", false)) {
-          long vid = this.vertex.getId().get(), dest, tmp;
-          do {
-            tmp = rnds.get(Long.valueOf(vertex.getId().get())).nextLong();
-            // tmp = (new Random(vid)).nextLong();
-            // tmp = r.nextLong();
-            if (tmp < 0) {
-              tmp = -tmp;
-            }
-            dest = tmp
-                % (getConf().getLong(
-                    PseudoRandomInputFormatConstants.AGGREGATE_VERTICES, 10));
-          } while (dest == vid);
-
-          sendMessage(new LongWritable(dest), rm);
-        } else {
-          sendMessage(
-              new LongWritable(this.verData.getLockedEdgeTargetVertex()), rm);
+        for (LongWritable l : vrtces) {
+          sendMessage(l, LockedEdgeMessage);
         }
-
-        /*
-         * sendMessage(new
-         * LongWritable(this.verData.getLockedEdgeTargetVertex()), rm);
-         */
       }
+
     }
   }
 

@@ -20,8 +20,8 @@ package org.apache.giraph.examples.jabeja;
 import java.util.HashMap;
 
 /**
- * This class conatins the outgoing edges of a vertex and its neighbours on the
- * TargetVertex Side
+ * This class the outGoing edges of this vertex and the edge's neighbours on the
+ * TargetVertex Side or other end of the edge.
  * 
  * @author Pushparaj
  * 

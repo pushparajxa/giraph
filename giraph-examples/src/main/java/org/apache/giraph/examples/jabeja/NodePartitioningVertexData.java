@@ -20,17 +20,23 @@ package org.apache.giraph.examples.jabeja;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 /**
  * Vertex data for the NodePartitioning solution.
  */
 public class NodePartitioningVertexData implements Writable {
+  private ArrayList<JabejaEdge> lockedEdges = new ArrayList<JabejaEdge>();
+  private HashSet<String> lockedEdgedIds = new HashSet<String>();
   /**
    * This will contain information about the incoming edges from other vertices
    * to this vertex.
@@ -69,6 +75,8 @@ public class NodePartitioningVertexData implements Writable {
         new OwnEdgeReaderWriter());
     mapReader(inEdges, input, new LongReaderWriter(),
         new JabejaEdgeReaderWriter());
+    collectionReader(lockedEdgedIds, input, new stringReaderWriter());
+    collectionReader(lockedEdges, input, new JabejaEdgeReaderWriter());
   }
 
   @Override
@@ -79,6 +87,8 @@ public class NodePartitioningVertexData implements Writable {
         new OwnEdgeReaderWriter());
     mapWriter(inEdges, output, new LongReaderWriter(),
         new JabejaEdgeReaderWriter());
+    collectionWriter(lockedEdgedIds, output, new stringReaderWriter());
+    collectionWriter(lockedEdges, output, new JabejaEdgeReaderWriter());
 
   }
 
@@ -128,6 +138,25 @@ public class NodePartitioningVertexData implements Writable {
     }
   }
 
+  public static <K> void collectionWriter(Collection<K> al, DataOutput output,
+      FieldReaderWriter<K> listElementReaderWriter) throws IOException {
+    output.writeInt(al.size());
+    for (K ele : al) {
+      listElementReaderWriter.write(output, ele);
+    }
+
+  }
+
+  public static <K> void collectionReader(Collection<K> al, DataInput input,
+      FieldReaderWriter<K> listElementReaderWriter) throws IOException {
+    int size = input.readInt();
+    while (size > 0) {
+      K ele = listElementReaderWriter.read(input);
+      al.add(ele);
+      size--;
+    }
+  }
+
   private interface FieldReaderWriter<K> {
     public void write(DataOutput output, K field) throws IOException;
 
@@ -143,6 +172,17 @@ public class NodePartitioningVertexData implements Writable {
     public Long read(DataInput input) throws IOException {
       return Long.valueOf(input.readLong());
     }
+  }
+
+  private static class stringReaderWriter implements FieldReaderWriter<String> {
+    public void write(DataOutput output, String val) throws IOException {
+      Text.writeString(output, val);
+    }
+
+    public String read(DataInput input) throws IOException {
+      return Text.readString(input);
+    }
+
   }
 
   private static class JabejaEdgeReaderWriter implements
@@ -193,6 +233,22 @@ public class NodePartitioningVertexData implements Writable {
 
   public void setOutEdges(HashMap<Long, OwnEdge> outEdges) {
     this.outEdges = outEdges;
+  }
+
+  public ArrayList<JabejaEdge> getLockedEdges() {
+    return lockedEdges;
+  }
+
+  public void setLockedEdges(ArrayList<JabejaEdge> lockedEdges) {
+    this.lockedEdges = lockedEdges;
+  }
+
+  public HashSet<String> getLockedEdgedIds() {
+    return lockedEdgedIds;
+  }
+
+  public void setLockedEdgedIds(HashSet<String> lockedEdgedIds) {
+    this.lockedEdgedIds = lockedEdgedIds;
   }
 
 }

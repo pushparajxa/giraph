@@ -53,4 +53,9 @@ public class JabejaEdge {
     this.destVertex = longWritable2;
     this.color = intWritable;
   }
+
+  public String getId() {
+    return sourceVetex.toString() + "ID" + destVertex.toString();
+
+  }
 }
