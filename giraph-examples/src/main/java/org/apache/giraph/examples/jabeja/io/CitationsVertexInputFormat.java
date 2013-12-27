@@ -23,13 +23,14 @@ import org.apache.giraph.examples.jabeja.NodePartitioningVertexData;
 import org.apache.giraph.io.formats.IntIntTextVertexValueInputFormat;
 import org.apache.giraph.io.formats.TextVertexValueInputFormat;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class CitationsVertexInputFormat
     extends
-    TextVertexValueInputFormat<IntWritable, NodePartitioningVertexData, IntWritable> {
+    TextVertexValueInputFormat<LongWritable, NodePartitioningVertexData, IntWritable> {
 
   @Override
   public TextVertexValueReader createVertexValueReader(InputSplit split,
@@ -50,8 +51,8 @@ public class CitationsVertexInputFormat
     }
 
     @Override
-    protected IntWritable getId(Integer data) throws IOException {
-      return new IntWritable(data);
+    protected LongWritable getId(Integer data) throws IOException {
+      return new LongWritable(data);
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.apache.giraph.io.formats.IntNullTextEdgeInputFormat;
 import org.apache.giraph.io.formats.TextEdgeInputFormat;
 import org.apache.giraph.utils.IntPair;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -34,14 +35,14 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * Takes an input file in the format source_vertex end_vertex
  */
 public class CitationsEdgeInputFormat extends
-    TextEdgeInputFormat<IntWritable, IntWritable> {
+    TextEdgeInputFormat<LongWritable, IntWritable> {
   /** Splitter for endpoints */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
   private int totalNumberOfColors = 2;
   private Random randomGenerator;
 
   @Override
-  public EdgeReader<IntWritable, IntWritable> createEdgeReader(
+  public EdgeReader<LongWritable, IntWritable> createEdgeReader(
       InputSplit split, TaskAttemptContext context) throws IOException {
     totalNumberOfColors = getConf().getInt("JaBeJa.NumberOfColors",
         totalNumberOfColors);
@@ -62,15 +63,15 @@ public class CitationsEdgeInputFormat extends
     }
 
     @Override
-    protected IntWritable getSourceVertexId(IntPair endpoints)
+    protected LongWritable getSourceVertexId(IntPair endpoints)
         throws IOException {
-      return new IntWritable(endpoints.getFirst());
+      return new LongWritable(endpoints.getFirst());
     }
 
     @Override
-    protected IntWritable getTargetVertexId(IntPair endpoints)
+    protected LongWritable getTargetVertexId(IntPair endpoints)
         throws IOException {
-      return new IntWritable(endpoints.getSecond());
+      return new LongWritable(endpoints.getSecond());
     }
 
     @Override
