@@ -19,15 +19,17 @@ package org.apache.giraph.examples.jabeja.io;
 
 import java.io.IOException;
 
+import org.apache.giraph.examples.jabeja.NodePartitioningVertexData;
 import org.apache.giraph.graph.Vertex;
 import org.apache.giraph.io.formats.TextVertexOutputFormat;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class VertexIdOutputFormat extends
-    TextVertexOutputFormat<IntWritable, NullWritable, NullWritable> {
+public class VertexIdOutputFormat
+    extends
+    TextVertexOutputFormat<LongWritable, NodePartitioningVertexData, IntWritable> {
 
   @Override
   public TextVertexWriter createVertexWriter(TaskAttemptContext context) {
@@ -39,7 +41,7 @@ public class VertexIdOutputFormat extends
 
     @Override
     protected Text convertVertexToLine(
-        Vertex<IntWritable, NullWritable, NullWritable> vertex)
+        Vertex<LongWritable, NodePartitioningVertexData, IntWritable> vertex)
         throws IOException {
 
       StringBuilder str = new StringBuilder();
