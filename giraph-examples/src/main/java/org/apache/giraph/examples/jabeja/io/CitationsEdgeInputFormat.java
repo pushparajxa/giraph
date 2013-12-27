@@ -18,6 +18,7 @@
 package org.apache.giraph.examples.jabeja.io;
 
 import java.io.IOException;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 import org.apache.giraph.io.EdgeReader;
@@ -25,7 +26,6 @@ import org.apache.giraph.io.formats.IntNullTextEdgeInputFormat;
 import org.apache.giraph.io.formats.TextEdgeInputFormat;
 import org.apache.giraph.utils.IntPair;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -33,22 +33,27 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 /*
  * Takes an input file in the format source_vertex end_vertex
  */
-public class EdgeInputFormat extends
-    TextEdgeInputFormat<IntWritable, NullWritable> {
+public class CitationsEdgeInputFormat extends
+    TextEdgeInputFormat<IntWritable, IntWritable> {
   /** Splitter for endpoints */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
+  private int totalNumberOfColors = 2;
+  private Random randomGenerator;
 
   @Override
-  public EdgeReader<IntWritable, NullWritable> createEdgeReader(
+  public EdgeReader<IntWritable, IntWritable> createEdgeReader(
       InputSplit split, TaskAttemptContext context) throws IOException {
-    return new IntNullTextEdgeReader();
+    totalNumberOfColors = getConf().getInt("JaBeJa.NumberOfColors",
+        totalNumberOfColors);
+    randomGenerator = new Random(totalNumberOfColors);
+    return new CitationsEdgeReader();
   }
 
   /**
    * {@link org.apache.giraph.io.EdgeReader} associated with
    * {@link IntNullTextEdgeInputFormat}.
    */
-  public class IntNullTextEdgeReader extends
+  public class CitationsEdgeReader extends
       TextEdgeReaderFromEachLineProcessed<IntPair> {
     @Override
     protected IntPair preprocessLine(Text line) throws IOException {
@@ -69,8 +74,12 @@ public class EdgeInputFormat extends
     }
 
     @Override
-    protected NullWritable getValue(IntPair endpoints) throws IOException {
-      return NullWritable.get();
+    protected IntWritable getValue(IntPair endpoints) throws IOException {
+      int ran = randomGenerator.nextInt();
+      if (ran < 0) {
+        ran = -ran;
+      }
+      return new IntWritable(ran % totalNumberOfColors);
     }
   }
 }
