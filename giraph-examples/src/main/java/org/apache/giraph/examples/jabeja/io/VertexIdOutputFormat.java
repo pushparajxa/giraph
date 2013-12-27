@@ -44,7 +44,7 @@ public class VertexIdOutputFormat extends
 
       StringBuilder str = new StringBuilder();
 
-      str.append(vertex.getId().toString() + "\n");
+      str.append(vertex.getId().toString());
 
       return new Text(str.toString());
     }
