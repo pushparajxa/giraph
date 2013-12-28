@@ -445,7 +445,7 @@ public class NodePartitioningComputation
       totalEnergyNew = Math.pow(edgeNewEnergy, alpha)
           + Math.pow(requestNewEnergy, alpha);
 
-      totalEnergyNew = totalEnergyNew
+      totalEneryOld = totalEneryOld
           * (temp - ((int) (getSuperstep() / 4) * delta));
 
     } else {
