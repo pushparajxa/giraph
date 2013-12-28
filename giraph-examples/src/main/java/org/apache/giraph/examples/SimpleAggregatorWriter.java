@@ -70,8 +70,11 @@ public class SimpleAggregatorWriter extends
       long superstep) throws IOException {
     if (superstep % 3 == 0) {
       for (Entry<String, Writable> entry : aggregatorMap) {
-        Text t = new Text("SuperStep=" + superstep + ".Energy= "
-            + entry.getValue().toString() + "\n");
+        /*
+         * Text t = new Text("SuperStep=" + superstep + ".Energy= " +
+         * entry.getValue().toString() + "\n");
+         */
+        Text t = new Text(superstep + " " + entry.getValue().toString() + "\n");
         t.write(output);
 
       }
