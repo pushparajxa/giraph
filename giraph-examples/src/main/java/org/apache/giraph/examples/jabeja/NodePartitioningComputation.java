@@ -388,11 +388,36 @@ public class NodePartitioningComputation
         verData.getOutEdges().get(l).details.color.get());
     int requestOldEnergy = calculateEnergyOfRequest(rm,
         rm.getEdge().color.get());
-    int totalEneryOld = edgeOldEnergy + requestOldEnergy;
+    double totalEneryOld;
     int edgeNewEnergy = calculateEnergyOfEdge(l, rm.getEdge().color.get());
     int requestNewEnergy = calculateEnergyOfRequest(rm, verData.getOutEdges()
         .get(l).details.color.get());
-    int totalEnergyNew = edgeNewEnergy + requestNewEnergy;
+    double totalEnergyNew;
+    int alpha = getConf().getInt("JaBeJa.alpha", 1);
+
+    if (getConf().getBoolean("JaBeJa.annealingEnabled", false)) {
+      float temp = getConf().getFloat("JaBeJa.initTemp", 2);
+      float delta = getConf().getFloat("JaBeJa.delta", 0.0001f);
+
+      totalEneryOld = Math.pow(edgeOldEnergy, alpha)
+          + Math.pow(requestOldEnergy, alpha);
+
+      totalEnergyNew = Math.pow(edgeNewEnergy, alpha)
+          + Math.pow(requestNewEnergy, alpha);
+
+      totalEnergyNew = totalEnergyNew
+          * (temp - ((int) (getSuperstep() / 4) * delta));
+
+    } else {
+
+      totalEneryOld = Math.pow(edgeOldEnergy, alpha)
+          + Math.pow(requestOldEnergy, alpha);
+
+      totalEnergyNew = Math.pow(edgeNewEnergy, alpha)
+          + Math.pow(requestNewEnergy, alpha);
+
+    }
+
     if (totalEnergyNew < totalEneryOld)
       return true;
     else
