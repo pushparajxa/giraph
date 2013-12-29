@@ -144,6 +144,16 @@ public class NodePartitioningComputation
        * Adds the incoming edges at this vertex.
        */
       neighbrs.addAll(verData.getInEdges().values());
+      /*
+       * Remove if it contains any neighbors which are locked
+       */
+      HashSet<String> lockedIds = verData.getLockedEdgedIds();
+
+      for (JabejaEdge je : neighbrs) {
+        if (lockedIds.contains(je.getId())) {
+          neighbrs.remove(je);
+        }
+      }
 
       /*
        * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
@@ -559,7 +569,8 @@ public class NodePartitioningComputation
         System.out.println("Edge selected for swapping's Target Vertex= "
             + this.verData.getLockedEdgeTargetVertex().longValue());
 
-        // Send that this edge has been selected for swapping to its neighbors.
+        // Send that this edge has been selected for swapping ,to the
+// owners(vertices) of the neighboring edges.
         Set<LongWritable> vrtces = new HashSet<LongWritable>();
         for (JabejaEdge je : verData.getOutEdges().get(
             verData.getLockedEdgeTargetVertex()).neighbours.values()) {

@@ -144,6 +144,16 @@ public class CitationsEdgePartitioningComputation
        * Adds the incoming edges at this vertex.
        */
       neighbrs.addAll(verData.getInEdges().values());
+      /*
+       * Remove if it conatins any neighbors which are locked
+       */
+      HashSet<String> lockedIds = verData.getLockedEdgedIds();
+
+      for (JabejaEdge je : neighbrs) {
+        if (lockedIds.contains(je.getId())) {
+          neighbrs.remove(je);
+        }
+      }
 
       /*
        * ReqstMessage rm = new ReqstMessage(this.vertex.getId(),
