@@ -695,7 +695,7 @@ public class NodePartitioningComputation
           .put(
               e.getTargetVertexId().get(),
               new OwnEdge(new JabejaEdge(this.vertex.getId(), e
-                  .getTargetVertexId(), e.getValue())));
+                  .getTargetVertexId(), new IntWritable(e.getValue().get()))));
       /*
        * sendMessage( e.getTargetVertexId(), new
        * ZeroMessage(this.vertex.getId(), new JabejaEdge(this.vertex .getId(),
