@@ -19,20 +19,30 @@ package org.apache.giraph.examples.jabeja;
 
 import java.io.IOException;
 
+import org.apache.giraph.edge.Edge;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 
-public class SimpleComputaion extends
-    BasicComputation<IntWritable, NullWritable, NullWritable, Message> {
+public class SimpleComputaion
+    extends
+    BasicComputation<LongWritable, NullWritable, NullWritable, SimpleComputationMessage> {
 
   @Override
-  public void compute(Vertex<IntWritable, NullWritable, NullWritable> vertex,
-      Iterable<Message> messages) throws IOException {
-    // TODO Auto-generated method stub
+  public void compute(Vertex<LongWritable, NullWritable, NullWritable> vertex,
+      Iterable<SimpleComputationMessage> messages) throws IOException {
+
     if (getSuperstep() == 1)
       vertex.voteToHalt();
+    else if (getSuperstep() == 0) {
+// Send message to destination vertex of each edge, so as to activate vertices
+// which do not have any outgoing edges
+      for (Edge<LongWritable, NullWritable> e : vertex.getEdges()) {
+        sendMessage((LongWritable) e.getTargetVertexId(),
+            new SimpleComputationMessage());
+      }
+    }
 
   }
 
