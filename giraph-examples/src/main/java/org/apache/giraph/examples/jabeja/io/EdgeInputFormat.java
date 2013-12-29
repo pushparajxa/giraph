@@ -23,8 +23,7 @@ import java.util.regex.Pattern;
 import org.apache.giraph.io.EdgeReader;
 import org.apache.giraph.io.formats.IntNullTextEdgeInputFormat;
 import org.apache.giraph.io.formats.TextEdgeInputFormat;
-import org.apache.giraph.utils.IntPair;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -34,12 +33,12 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  * Takes an input file in the format source_vertex end_vertex
  */
 public class EdgeInputFormat extends
-    TextEdgeInputFormat<IntWritable, NullWritable> {
+    TextEdgeInputFormat<LongWritable, NullWritable> {
   /** Splitter for endpoints */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
 
   @Override
-  public EdgeReader<IntWritable, NullWritable> createEdgeReader(
+  public EdgeReader<LongWritable, NullWritable> createEdgeReader(
       InputSplit split, TaskAttemptContext context) throws IOException {
     return new IntNullTextEdgeReader();
   }
@@ -49,27 +48,27 @@ public class EdgeInputFormat extends
    * {@link IntNullTextEdgeInputFormat}.
    */
   public class IntNullTextEdgeReader extends
-      TextEdgeReaderFromEachLineProcessed<IntPair> {
+      TextEdgeReaderFromEachLineProcessed<LongPair> {
     @Override
-    protected IntPair preprocessLine(Text line) throws IOException {
+    protected LongPair preprocessLine(Text line) throws IOException {
       String[] tokens = SEPARATOR.split(line.toString());
-      return new IntPair(Integer.valueOf(tokens[0]), Integer.valueOf(tokens[1]));
+      return new LongPair(Long.valueOf(tokens[0]), Long.valueOf(tokens[1]));
     }
 
     @Override
-    protected IntWritable getSourceVertexId(IntPair endpoints)
+    protected LongWritable getSourceVertexId(LongPair endpoints)
         throws IOException {
-      return new IntWritable(endpoints.getFirst());
+      return new LongWritable(endpoints.getFirst());
     }
 
     @Override
-    protected IntWritable getTargetVertexId(IntPair endpoints)
+    protected LongWritable getTargetVertexId(LongPair endpoints)
         throws IOException {
-      return new IntWritable(endpoints.getSecond());
+      return new LongWritable(endpoints.getSecond());
     }
 
     @Override
-    protected NullWritable getValue(IntPair endpoints) throws IOException {
+    protected NullWritable getValue(LongPair endpoints) throws IOException {
       return NullWritable.get();
     }
   }
