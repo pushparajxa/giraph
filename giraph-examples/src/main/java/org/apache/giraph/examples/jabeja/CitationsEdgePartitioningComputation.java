@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -148,10 +149,12 @@ public class CitationsEdgePartitioningComputation
        * Remove if it conatins any neighbors which are locked
        */
       HashSet<String> lockedIds = verData.getLockedEdgedIds();
-
-      for (JabejaEdge je : neighbrs) {
+      ListIterator<JabejaEdge> aitr = neighbrs.listIterator();
+      JabejaEdge je;
+      while (aitr.hasNext()) {
+        je = aitr.next();
         if (lockedIds.contains(je.getId())) {
-          neighbrs.remove(je);
+          aitr.remove();
         }
       }
 
