@@ -236,7 +236,7 @@ public class CitationsEdgePartitioningComputation
         }
         for (JabejaEdge jedge : edges) {
           if (jedge.sourceVetex.get() == je.sourceVetex.get()
-              && jedge.destVertex.get() == je.sourceVetex.get()) {
+              && jedge.destVertex.get() == je.destVertex.get()) {
             jedge.color = new IntWritable(je.color.get());
           }
         }
