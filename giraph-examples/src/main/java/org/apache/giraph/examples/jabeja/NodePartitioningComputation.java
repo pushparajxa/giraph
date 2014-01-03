@@ -199,9 +199,46 @@ public class NodePartitioningComputation
     int energy = 0;
     for (Map.Entry<Long, OwnEdge> e : verData.getOutEdges().entrySet()) {
       energy = energy
-          + calculateEnergyOfEdge(e.getKey(), e.getValue().details.color.get());
+          + calculateEnergyOfEdgeForAggregation(e.getKey(),
+              e.getValue().details.color.get());
     }
     return new IntWritable(energy);
+  }
+
+  private int calculateEnergyOfEdgeForAggregation(Long lg, int color) {
+    OwnEdge ownEdge = verData.getOutEdges().get(lg);
+    // int myColor = ownEdge.details.color.get();
+    int energy = 0;
+    ArrayList<JabejaEdge> edges = new ArrayList<JabejaEdge>(
+        ownEdge.neighbours.values());
+
+    /*
+     * Add all the inedges
+     */
+    edges.addAll(verData.getInEdges().values());
+    /*
+     * Add all the outgoing edges from this vertex except the edge in question
+     * and the lockedEdge which is sent as a request for swapping
+     */
+    for (Long l : verData.getOutEdges().keySet()) {
+      if (l.longValue() != this.verData.getLockedEdgeTargetVertex().longValue()
+          && l.longValue() != lg.longValue())
+        edges.add(verData.getOutEdges().get(l).details);
+    }
+
+    /*
+     * Now we have all edges , let's calculate the energu of the edge. Energy =
+     * no.of edges with color different than it's.
+     */
+
+    for (JabejaEdge j : edges) {
+
+      if (j.color.get() != color) {
+        energy++;
+      }
+
+    }
+    return Integer.valueOf(energy);
   }
 
   /**
