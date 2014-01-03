@@ -51,7 +51,11 @@ public class NodePartitioningPseudoRandomVertexInputFormat extends
           totalNumberOfColors);
       randomGenerator = new Random(totalNumberOfColors);
     }
-    int color = (int) ((randomGenerator.nextDouble()) * totalNumberOfColors);
+    int ran = randomGenerator.nextInt();
+    if (ran < 0) {
+      ran = -ran;
+    }
+    int color = (int) (ran % totalNumberOfColors);
     return new IntWritable(color);
   }
 }
