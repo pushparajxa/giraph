@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 
 import org.apache.giraph.aggregators.AggregatorWriter;
 import org.apache.giraph.conf.DefaultImmutableClassesGiraphConfigurable;
+import org.apache.giraph.examples.jabeja.aggregators.JabejaMasterCompute;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,6 +42,7 @@ public class SimpleAggregatorWriter extends
   private static String FILENAME;
   /** Saved output stream to write to */
   private FSDataOutputStream output;
+  
 
   public static String getFilename() {
     return FILENAME;
@@ -69,15 +71,22 @@ public class SimpleAggregatorWriter extends
   public void writeAggregator(Iterable<Entry<String, Writable>> aggregatorMap,
       long superstep) throws IOException {
     if (superstep % 4 == 0) {
+        String s = new String(""+superstep);
       for (Entry<String, Writable> entry : aggregatorMap) {
         /*
          * Text t = new Text("Aggregator=" + entry.getKey() + ".SuperStep=" +
          * superstep + ".Energy= " + entry.getValue().toString() + "\n");
          */
-        Text t = new Text(superstep + " " + entry.getValue().toString() + "\n");
-        t.write(output);
+      if(entry.getKey().equals(JabejaMasterCompute.ENEREGY)){
+          s = s+".Energy="+entry.getValue().toString();
+      }
+      else if(entry.getKey().equals(JabejaMasterCompute.NODE_COUNT)){
+          s=s+".NodeCount="+entry.getValue().toString()+"\n";
+      }
 
       }
+       Text t = new Text(s);
+        t.write(output);
       output.flush();
     }
 

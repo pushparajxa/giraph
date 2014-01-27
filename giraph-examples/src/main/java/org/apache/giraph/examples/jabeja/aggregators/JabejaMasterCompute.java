@@ -26,6 +26,7 @@ import org.apache.giraph.master.DefaultMasterCompute;
 public class JabejaMasterCompute extends DefaultMasterCompute {
   /** Name of the Energy funcation valus aggregator */
   public static final String ENEREGY = "Energy";
+  public static final String NODE_COUNT = "NODE_COUNT";
 
   @Override
   public void compute() {
@@ -39,5 +40,6 @@ public class JabejaMasterCompute extends DefaultMasterCompute {
   public void initialize() throws InstantiationException,
       IllegalAccessException {
     registerAggregator(ENEREGY, IntSumAggregator.class);
+    registerAggregator(NODE_COUNT, IntSumAggregator.class);
   }
 }

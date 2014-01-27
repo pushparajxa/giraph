@@ -103,13 +103,27 @@ public class NodePartitioningComputation
 
     if (getSuperstep() % 4 == 3) { // if you change this if condition change in
 // SimpleAggregatorWriter also.
-      System.out.println("Energy at Vertex =" + vertex.getId().get()
-          + ".SuperStep=" + getSuperstep() + " is =" + calculateEnergy());
+     /* System.out.println("Energy at Vertex =" + vertex.getId().get()
+          + ".SuperStep=" + getSuperstep() + " is =" + calculateEnergy());*/
       aggregate(JabejaMasterCompute.ENEREGY, calculateEnergy());
+      aggregate(JabejaMasterCompute.NODE_COUNT,new IntWritable(getNodeCut()));
     }
 
   }
-
+private int getNodeCut(){
+    /*
+    return the diiistinct number of different colors of edges to which this vertex is connected.
+    */
+    Set<IntWritable> colors = new HashSet<IntWritable>();
+    for(JabejaEdge j: verData.getInEdges().values()){
+        colors.add(j.color);
+    }
+    for(OwnEdge oe: verData.getOutEdges().values()){
+        colors.add(oe.details.color);
+    }
+    return colors.size();
+    
+}
   private void processLockedEdgeMessages(Iterable<Message> messages) {
 
     ArrayList<JabejaEdge> al = new ArrayList<JabejaEdge>();
