@@ -71,17 +71,17 @@ public class SimpleAggregatorWriter extends
   public void writeAggregator(Iterable<Entry<String, Writable>> aggregatorMap,
       long superstep) throws IOException {
     if (superstep % 4 == 0) {
-        String s = new String(""+superstep);
+        String s = ""+superstep;
       for (Entry<String, Writable> entry : aggregatorMap) {
         /*
          * Text t = new Text("Aggregator=" + entry.getKey() + ".SuperStep=" +
          * superstep + ".Energy= " + entry.getValue().toString() + "\n");
          */
       if(entry.getKey().equals(JabejaMasterCompute.ENEREGY)){
-          s = s+".Energy="+entry.getValue().toString();
+          s = s.concat(".Energy="+entry.getValue().toString());
       }
       else if(entry.getKey().equals(JabejaMasterCompute.NODE_COUNT)){
-          s=s+".NodeCount="+entry.getValue().toString()+"\n";
+          s=s.concat(".NodeCount="+entry.getValue().toString()+"\n");
       }
 
       }
